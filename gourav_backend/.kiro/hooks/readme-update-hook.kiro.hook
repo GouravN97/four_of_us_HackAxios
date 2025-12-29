@@ -1,0 +1,35 @@
+{
+  "enabled": true,
+  "name": "README Update for Large Changes",
+  "description": "Monitors for significant source code changes and prompts to update the patient risk classifier README accordingly",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "*.py",
+      "*.js",
+      "*.ts",
+      "*.java",
+      "*.cpp",
+      "*.c",
+      "*.go",
+      "*.rs",
+      "*.rb",
+      "*.php",
+      "*.cs",
+      "*.kt",
+      "*.swift",
+      "*.scala",
+      "*.clj",
+      "*.hs",
+      "*.ml",
+      "*.r",
+      "*.m",
+      "*.jl"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the recent source code changes. If these represent large or significant modifications to the patient risk classifier system (such as new features, algorithm changes, API modifications, or architectural updates), please update the README file to reflect these changes. Focus on keeping the documentation accurate and helpful for users and developers. Only make updates if the changes are substantial enough to warrant README modifications."
+  }
+}
