@@ -1,0 +1,199 @@
+.frame0 {
+  position: relative;
+  width: 1280px;
+  height: 910px;
+  background: #B0F5E9;
+  border: 1px solid #6B7280;
+  margin: 0 auto;
+}
+
+.frame0::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #B0F5E9;
+  z-index: -1;
+}
+
+.background-image {
+  position: absolute;
+  left: 0;
+  top: -14px;
+  width: 1420px;
+  height: 953px;
+  background: url('/assets/images/background-74390a.png') center/cover;
+}
+
+.logo {
+  position: absolute;
+  left: 995px;
+  top: 122px;
+  width: 226px;
+  height: 121px;
+  object-fit: cover;
+  z-index: 2;
+}
+
+.login-card {
+  position: absolute;
+  left: 640px;
+  top: 61px;
+  width: 576px;
+  height: 787px;
+  background: #FFFFFF;
+  border-radius: 44px;
+  z-index: 1;
+}
+
+.title {
+  position: absolute;
+  left: 39px;
+  top: 121px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 36px;
+  line-height: 1.21;
+  color: #143C3C;
+}
+
+.label {
+  position: absolute;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.21;
+  color: #285655;
+}
+
+.input {
+  position: absolute;
+  border: 1px solid #528F8E;
+  background: transparent;
+  padding: 0 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  outline: none;
+}
+
+/* Hospital ID */
+.hospital-id-label {
+  left: 39px;
+  top: 217px;
+  color: #093E3D;
+}
+.hospital-id-input {
+  left: 39px;
+  top: 244px;
+  width: 515px;
+  height: 37px;
+}
+
+/* First Name */
+.first-name-label {
+  left: 39px;
+  top: 307px;
+}
+.first-name-input {
+  left: 39px;
+  top: 334px;
+  width: 245px;
+  height: 37px;
+}
+
+/* Last Name */
+.last-name-label {
+  left: 308px;
+  top: 307px;
+}
+.last-name-input {
+  left: 308px;
+  top: 334px;
+  width: 245px;
+  height: 37px;
+}
+
+/* Admin Email */
+.admin-email-label {
+  left: 39px;
+  top: 390px;
+}
+.admin-email-input {
+  left: 39px;
+  top: 418px;
+  width: 515px;
+  height: 37px;
+}
+
+/* Password */
+.password-label {
+  left: 39px;
+  top: 478px;
+}
+.password-input {
+  left: 39px;
+  top: 506px;
+  width: 515px;
+  height: 37px;
+}
+
+/* Login Button */
+.login-button {
+  position: absolute;
+  left: 39px;
+  top: 588px;
+  width: 515px;
+  height: 46px;
+  background: #538E8E;
+  border: 1px solid #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 27px;
+  line-height: 1.21;
+  text-align: center;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background: #3d7373;
+}
+
+/* Bottom left branding */
+.logo-bottom {
+  position: absolute;
+  left: -16px;
+  top: 805px;
+  width: 125px;
+  height: 67px;
+  object-fit: cover;
+  z-index: 2;
+}
+
+.brand-name {
+  position: absolute;
+  left: 69px;
+  top: 828px;
+  font-family: 'Kaisei Decol', serif;
+  font-weight: 700;
+  font-size: 32px;
+  line-height: 0.64;
+  letter-spacing: 0.56%;
+  color: #0B3C43;
+  z-index: 2;
+}
+
+.tagline {
+  position: absolute;
+  left: 28px;
+  top: 856px;
+  font-family: 'Kaisei Decol', serif;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.44;
+  letter-spacing: 1.25%;
+  color: #062326;
+  z-index: 2;
+}
