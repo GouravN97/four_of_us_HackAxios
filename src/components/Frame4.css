@@ -1,48 +1,36 @@
 .frame4 {
-  width: 1280px;
+  width: 100%;
   min-height: 100vh;
   background: #A8C8C7;
-  margin: 0 auto;
   position: relative;
-  padding-bottom: 50px;
-}
-
-.frame4::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: #A8C8C7;
-  z-index: -1;
+  padding-bottom: 40px;
 }
 
 /* Sidebar */
 .frame4 .sidebar {
   position: fixed;
-  left: calc(50% - 640px);
+  left: 0;
   top: 0;
-  width: 300px;
+  width: 200px;
   height: 100vh;
   background: #E5E5E5;
   z-index: 10;
 }
 
 .frame4 .sidebar-menu {
-  padding-top: 131px;
-  padding-left: 14px;
+  padding-top: 70px;
+  padding-left: 10px;
 }
 
 .frame4 .menu-item {
-  width: 272px;
-  height: 68px;
+  width: 180px;
+  height: 46px;
   background: #E5E5E5;
-  border-radius: 20px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  padding-left: 20px;
-  gap: 15px;
+  padding-left: 14px;
+  gap: 10px;
   cursor: pointer;
 }
 
@@ -61,29 +49,30 @@
 .frame4 .menu-item span {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 22px;
+  font-size: 14px;
   color: #0B3C43;
 }
 
 .frame4 .menu-icon {
-  width: 45px;
-  height: 45px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
 }
 
 /* Header */
 .frame4 .header {
   position: fixed;
-  left: calc(50% - 640px);
+  left: 0;
   top: 0;
-  width: 1280px;
-  height: 70px;
+  width: 100%;
+  height: 50px;
   background: #F2F2F2;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 30px;
+  padding: 0 20px;
   z-index: 20;
+  box-sizing: border-box;
 }
 
 .frame4 .header-left {
@@ -92,80 +81,79 @@
 }
 
 .frame4 .header-logo {
-  width: 80px;
-  height: 43px;
+  width: 50px;
+  height: 28px;
   object-fit: cover;
-  margin-left: -27px;
-  margin-top: -8px;
+  margin-left: 0;
 }
 
 .frame4 .header-brand {
   font-family: 'Kaisei Decol', serif;
   font-weight: 700;
-  font-size: 20px;
+  font-size: 14px;
   color: #0B3C43;
-  margin-left: -5px;
+  margin-left: 2px;
 }
 
 .frame4 .header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .frame4 .logout-text {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 20px;
+  font-size: 14px;
   color: #285655;
   cursor: pointer;
 }
 
 .frame4 .logout-icon {
-  width: 35px;
-  height: 43px;
+  width: 22px;
+  height: 28px;
   object-fit: contain;
   cursor: pointer;
 }
 
 /* Main Content */
 .frame4 .main-content {
-  margin-left: 300px;
-  padding: 100px 30px 30px 30px;
+  margin-left: 200px;
+  padding: 65px 30px 30px 30px;
 }
 
 .frame4 .section-title {
   font-family: 'Inter', sans-serif;
   font-weight: 700;
-  font-size: 33px;
+  font-size: 20px;
   color: #082D32;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 /* Search Row */
 .frame4 .search-row {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
 .frame4 .search-label {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 13px;
   color: #082D32;
 }
 
 .frame4 .search-input {
-  width: 180px;
-  height: 40px;
+  width: 160px;
+  height: 30px;
   background: #FFFFFF;
   border: none;
-  border-radius: 10px;
-  padding: 0 15px;
+  border-radius: 6px;
+  padding: 0 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 16px;
+  font-size: 12px;
   color: #082D32;
 }
 
@@ -178,9 +166,10 @@
   background: #FFFFFF;
   border-radius: 10px;
   overflow: hidden;
-  max-height: 400px;
+  max-height: 380px;
   overflow-y: auto;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  width: 100%;
 }
 
 .frame4 .patient-table {
@@ -195,19 +184,19 @@
 }
 
 .frame4 .patient-table th {
-  padding: 15px 20px;
+  padding: 10px 12px;
   text-align: left;
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 11px;
 }
 
 .frame4 .patient-table td {
-  padding: 12px 20px;
+  padding: 8px 12px;
   color: #082D32;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
+  font-size: 11px;
   border-bottom: 1px solid #E5E5E5;
 }
 
@@ -221,17 +210,19 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
 }
 
 .frame4 .add-patient-btn {
-  padding: 15px 40px;
+  padding: 12px 28px;
   background: #0B3C43;
   color: #FFFFFF;
   border: none;
   border-radius: 10px;
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
@@ -243,25 +234,25 @@
 .frame4 .action-group {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
 }
 
 .frame4 .action-label {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
-  font-size: 18px;
+  font-size: 13px;
   color: #082D32;
 }
 
 .frame4 .action-input {
-  width: 180px;
-  height: 40px;
+  width: 160px;
+  height: 30px;
   background: #FFFFFF;
   border: none;
-  border-radius: 10px;
-  padding: 0 15px;
+  border-radius: 6px;
+  padding: 0 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 16px;
+  font-size: 12px;
   color: #082D32;
 }
 
