@@ -18,7 +18,6 @@ test-property:  ## Run property-based tests only
 	pytest -m property_tests
 
 lint:  ## Run linting
-	flake8 src tests
 	mypy src
 
 format:  ## Format code

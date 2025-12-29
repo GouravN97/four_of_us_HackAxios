@@ -2,32 +2,27 @@
 
 from .api_models import (
     ArrivalMode,
-    VitalSignsBase,
-    VitalSignsWithTimestamp,
-    VitalSignsUpdate,
-    PatientRegistration,
-    RiskAssessment,
-    PatientStatus,
-    HistoricalDataPoint,
-    HistoricalDataResponse,
+    ErrorResponse,
     HighRiskPatient,
     HighRiskPatientsResponse,
-    ErrorResponse,
+    HistoricalDataPoint,
+    HistoricalDataResponse,
+    PatientRegistration,
+    PatientStatus,
+    RiskAssessment,
     SuccessResponse,
+    VitalSignsBase,
+    VitalSignsUpdate,
+    VitalSignsWithTimestamp,
 )
-
-from .db_models import (
-    Base,
-    ArrivalModeEnum,
-    Patient,
-    VitalSigns,
-    RiskAssessment as DBRiskAssessment,
-)
+from .db_models import ArrivalModeEnum, Base, Patient
+from .db_models import RiskAssessment as DBRiskAssessment
+from .db_models import VitalSigns
 
 __all__ = [
     # API Models (Pydantic)
     "ArrivalMode",
-    "VitalSignsBase", 
+    "VitalSignsBase",
     "VitalSignsWithTimestamp",
     "VitalSignsUpdate",
     "PatientRegistration",

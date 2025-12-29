@@ -2,15 +2,16 @@
 Unit tests for API models and validation.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 from pydantic import ValidationError
 
 from src.models.api_models import (
-    VitalSignsUpdate,
-    PatientRegistration,
-    VitalSignsWithTimestamp,
     ArrivalMode,
+    PatientRegistration,
+    VitalSignsUpdate,
+    VitalSignsWithTimestamp,
 )
 
 
@@ -25,9 +26,9 @@ class TestVitalSignsValidation:
             diastolic_bp=80.0,
             respiratory_rate=16.0,
             oxygen_saturation=98.0,
-            temperature=36.5
+            temperature=36.5,
         )
-        
+
         assert valid_vitals.heart_rate == 72.0
         assert valid_vitals.systolic_bp == 120.0
         assert valid_vitals.diastolic_bp == 80.0
@@ -45,7 +46,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=36.5
+                temperature=36.5,
             )
         assert "heart_rate" in str(exc_info.value)
 
@@ -57,7 +58,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=36.5
+                temperature=36.5,
             )
         assert "heart_rate" in str(exc_info.value)
 
@@ -71,7 +72,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=36.5
+                temperature=36.5,
             )
 
         # Test diastolic BP above systolic BP
@@ -82,9 +83,11 @@ class TestVitalSignsValidation:
                 diastolic_bp=125.0,  # Above systolic
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=36.5
+                temperature=36.5,
             )
-        assert "Diastolic blood pressure must be less than systolic" in str(exc_info.value)
+        assert "Diastolic blood pressure must be less than systolic" in str(
+            exc_info.value
+        )
 
     def test_temperature_validation(self):
         """Test temperature range validation."""
@@ -96,7 +99,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=25.0  # Below 30
+                temperature=25.0,  # Below 30
             )
 
         # Test above maximum
@@ -107,7 +110,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=98.0,
-                temperature=50.0  # Above 45
+                temperature=50.0,  # Above 45
             )
 
     def test_oxygen_saturation_validation(self):
@@ -120,7 +123,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=45.0,  # Below 50
-                temperature=36.5
+                temperature=36.5,
             )
 
         # Test above maximum
@@ -131,7 +134,7 @@ class TestVitalSignsValidation:
                 diastolic_bp=80.0,
                 respiratory_rate=16.0,
                 oxygen_saturation=105.0,  # Above 100
-                temperature=36.5
+                temperature=36.5,
             )
 
 
@@ -151,10 +154,10 @@ class TestPatientRegistration:
                 respiratory_rate=18.0,
                 oxygen_saturation=96.0,
                 temperature=37.2,
-                timestamp=datetime.now()
-            )
+                timestamp=datetime.now(),
+            ),
         )
-        
+
         assert registration.patient_id == "P12345"
         assert registration.arrival_mode == ArrivalMode.AMBULANCE
         assert registration.acuity_level == 3
@@ -175,8 +178,8 @@ class TestPatientRegistration:
                     respiratory_rate=18.0,
                     oxygen_saturation=96.0,
                     temperature=37.2,
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now(),
+                ),
             )
 
         # Test above maximum
@@ -192,8 +195,8 @@ class TestPatientRegistration:
                     respiratory_rate=18.0,
                     oxygen_saturation=96.0,
                     temperature=37.2,
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now(),
+                ),
             )
 
     def test_patient_id_validation(self):
@@ -211,8 +214,8 @@ class TestPatientRegistration:
                     respiratory_rate=18.0,
                     oxygen_saturation=96.0,
                     temperature=37.2,
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now(),
+                ),
             )
 
     def test_arrival_mode_validation(self):
@@ -230,8 +233,8 @@ class TestPatientRegistration:
                     respiratory_rate=18.0,
                     oxygen_saturation=96.0,
                     temperature=37.2,
-                    timestamp=datetime.now()
-                )
+                    timestamp=datetime.now(),
+                ),
             )
 
 
@@ -247,7 +250,7 @@ class TestEdgeCases:
             diastolic_bp=20.0,
             respiratory_rate=5.0,
             oxygen_saturation=50.0,
-            temperature=30.0
+            temperature=30.0,
         )
         assert min_vitals.heart_rate == 30.0
 
@@ -258,6 +261,6 @@ class TestEdgeCases:
             diastolic_bp=200.0,
             respiratory_rate=60.0,
             oxygen_saturation=100.0,
-            temperature=45.0
+            temperature=45.0,
         )
         assert max_vitals.heart_rate == 200.0
