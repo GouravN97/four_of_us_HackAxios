@@ -161,6 +161,22 @@
   background: #3d7373;
 }
 
+/* Error Message */
+.error-message {
+  position: absolute;
+  left: 39px;
+  top: 175px;
+  width: 515px;
+  padding: 10px;
+  background: #FEE2E2;
+  border: 1px solid #DC2626;
+  border-radius: 8px;
+  color: #DC2626;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  text-align: center;
+}
+
 /* Bottom left branding */
 .logo-bottom {
   position: absolute;

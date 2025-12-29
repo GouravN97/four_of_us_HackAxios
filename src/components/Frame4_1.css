@@ -1,0 +1,140 @@
+.add-patient-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.add-patient-popup {
+  background-color: #FFFFFF;
+  border-radius: 20px;
+  padding: 30px 40px;
+  width: 550px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: #0B3C43;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #DC2626;
+}
+
+.popup-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  color: #0B3C43;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.patient-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Table-style form */
+.form-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.form-table thead {
+  background: #A8C8C7;
+}
+
+.form-table th {
+  padding: 12px 15px;
+  text-align: left;
+  color: #0B3C43;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.form-table tbody tr:nth-child(even) {
+  background: rgba(168, 200, 199, 0.15);
+}
+
+.form-table tbody tr:nth-child(odd) {
+  background: rgba(255, 200, 200, 0.15);
+}
+
+.form-table .field-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0B3C43;
+  width: 180px;
+}
+
+.form-table input,
+.form-table select {
+  width: 100%;
+  height: 35px;
+  background: #A8C8C7;
+  border: none;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #0B3C43;
+}
+
+.form-table input:focus,
+.form-table select:focus {
+  outline: 2px solid #00BDB7;
+}
+
+.form-table input::placeholder {
+  color: rgba(11, 60, 67, 0.5);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.add-btn {
+  padding: 12px 60px;
+  background: #0B3C43;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-btn:hover {
+  background: #0a3339;
+}

@@ -22,6 +22,18 @@ const Frame1 = () => {
     navigate('/');
   };
 
+  const handleER = () => {
+    navigate('/er');
+  };
+
+  const handleICU = () => {
+    navigate('/icu');
+  };
+
+  const handlePatientLog = () => {
+    navigate('/patient-log');
+  };
+
   return (
     <div className="frame1">
       {/* Sidebar */}
@@ -31,21 +43,17 @@ const Frame1 = () => {
             <img src="/assets/images/treatment-icon.png" alt="Overview" className="menu-icon" />
             <span>Overview</span>
           </div>
-          <div className="menu-item">
+          <div className="menu-item" onClick={handleER}>
             <img src="/assets/images/hospital-room-icon.png" alt="ER" className="menu-icon" />
             <span>ER</span>
           </div>
-          <div className="menu-item">
+          <div className="menu-item" onClick={handleICU}>
             <img src="/assets/images/star-of-life-icon.png" alt="ICU" className="menu-icon" />
             <span>ICU</span>
           </div>
-          <div className="menu-item">
+          <div className="menu-item" onClick={handlePatientLog}>
             <img src="/assets/images/people-icon.png" alt="Patient Log" className="menu-icon" />
             <span>Patient Log</span>
-          </div>
-          <div className="menu-item">
-            <img src="/assets/images/checkmark-icon.png" alt="Reasoning" className="menu-icon" />
-            <span>Reasoning</span>
           </div>
         </div>
       </div>
@@ -56,7 +64,10 @@ const Frame1 = () => {
           <img src="/assets/images/logo.png" alt="Logo" className="header-logo" />
           <span className="header-brand">VERIQ</span>
         </div>
-        <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        <div className="header-right">
+          <span className="logout-text" onClick={handleLogout}>Logout</span>
+          <img src="/assets/images/logout-icon.png" alt="Logout" className="logout-icon" onClick={handleLogout} />
+        </div>
       </div>
 
       {/* Main Content */}

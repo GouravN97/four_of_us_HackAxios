@@ -1,0 +1,270 @@
+.frame4 {
+  width: 1280px;
+  min-height: 100vh;
+  background: #A8C8C7;
+  margin: 0 auto;
+  position: relative;
+  padding-bottom: 50px;
+}
+
+.frame4::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #A8C8C7;
+  z-index: -1;
+}
+
+/* Sidebar */
+.frame4 .sidebar {
+  position: fixed;
+  left: calc(50% - 640px);
+  top: 0;
+  width: 300px;
+  height: 100vh;
+  background: #E5E5E5;
+  z-index: 10;
+}
+
+.frame4 .sidebar-menu {
+  padding-top: 131px;
+  padding-left: 14px;
+}
+
+.frame4 .menu-item {
+  width: 272px;
+  height: 68px;
+  background: #E5E5E5;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  padding-left: 20px;
+  gap: 15px;
+  cursor: pointer;
+}
+
+.frame4 .menu-item.active {
+  background: #0B3C43;
+}
+
+.frame4 .menu-item.active span {
+  color: #FFFFFF;
+}
+
+.frame4 .menu-item.active .menu-icon {
+  filter: brightness(0) invert(1);
+}
+
+.frame4 .menu-item span {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 22px;
+  color: #0B3C43;
+}
+
+.frame4 .menu-icon {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+/* Header */
+.frame4 .header {
+  position: fixed;
+  left: calc(50% - 640px);
+  top: 0;
+  width: 1280px;
+  height: 70px;
+  background: #F2F2F2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 30px;
+  z-index: 20;
+}
+
+.frame4 .header-left {
+  display: flex;
+  align-items: center;
+}
+
+.frame4 .header-logo {
+  width: 80px;
+  height: 43px;
+  object-fit: cover;
+  margin-left: -27px;
+  margin-top: -8px;
+}
+
+.frame4 .header-brand {
+  font-family: 'Kaisei Decol', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: #0B3C43;
+  margin-left: -5px;
+}
+
+.frame4 .header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.frame4 .logout-text {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  color: #285655;
+  cursor: pointer;
+}
+
+.frame4 .logout-icon {
+  width: 35px;
+  height: 43px;
+  object-fit: contain;
+  cursor: pointer;
+}
+
+/* Main Content */
+.frame4 .main-content {
+  margin-left: 300px;
+  padding: 100px 30px 30px 30px;
+}
+
+.frame4 .section-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 33px;
+  color: #082D32;
+  margin-bottom: 20px;
+}
+
+/* Search Row */
+.frame4 .search-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.frame4 .search-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #082D32;
+}
+
+.frame4 .search-input {
+  width: 180px;
+  height: 40px;
+  background: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 0 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #082D32;
+}
+
+.frame4 .search-input:focus {
+  outline: 2px solid #00BDB7;
+}
+
+/* Table Container */
+.frame4 .table-container {
+  background: #FFFFFF;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 30px;
+}
+
+.frame4 .patient-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.frame4 .patient-table thead {
+  background: #0B3C43;
+  position: sticky;
+  top: 0;
+}
+
+.frame4 .patient-table th {
+  padding: 15px 20px;
+  text-align: left;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.frame4 .patient-table td {
+  padding: 12px 20px;
+  color: #082D32;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  border-bottom: 1px solid #E5E5E5;
+}
+
+.frame4 .patient-table tbody tr:nth-child(even) {
+  background: rgba(168, 200, 199, 0.2);
+}
+
+/* Actions Row */
+.frame4 .actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.frame4 .add-patient-btn {
+  padding: 15px 40px;
+  background: #0B3C43;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.frame4 .add-patient-btn:hover {
+  background: #0a3339;
+}
+
+.frame4 .action-group {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.frame4 .action-label {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  color: #082D32;
+}
+
+.frame4 .action-input {
+  width: 180px;
+  height: 40px;
+  background: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 0 15px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #082D32;
+}
+
+.frame4 .action-input:focus {
+  outline: 2px solid #00BDB7;
+}
