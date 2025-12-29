@@ -12,7 +12,7 @@ This implementation plan creates a Python-based RESTful API system for patient r
   - Configure development tools (linting, formatting, testing)
   - _Requirements: All requirements (foundational setup)_
 
-- [ ] 2. Implement core data models and validation
+- [-] 2. Implement core data models and validation
   - [x] 2.1 Create Pydantic models for API requests and responses
     - Define PatientRegistration, VitalSignsUpdate, and response models
     - Implement medical range validation for vital signs
@@ -28,50 +28,53 @@ This implementation plan creates a Python-based RESTful API system for patient r
     - Set up proper relationships and constraints
     - _Requirements: 1.1, 1.2, 3.2, 3.3_
 
-  - [ ] 2.4 Write property test for patient registration round trip
+  - [x] 2.4 Write property test for patient registration round trip
 
     - **Property 1: Patient Registration Round Trip**
     - **Validates: Requirements 1.1, 1.2**
 
-- [ ] 3. Implement database layer and repositories
-  - [ ] 3.1 Create database connection and session management
+- [x] 3. Implement database layer and repositories
+  - [x] 3.1 Create database connection and session management
     - Set up SQLAlchemy engine and session factory
     - Implement database initialization and migration support
     - _Requirements: 4.4_
 
-  - [ ] 3.2 Implement PatientRepository
+  - [x] 3.2 Implement PatientRepository
     - Create CRUD operations for patient records
     - Implement unique ID generation and validation
     - _Requirements: 1.1, 1.4, 4.1_
 
-  - [ ]* 3.3 Write property test for patient ID uniqueness
+  - [x] 3.3 Write property test for patient ID uniqueness
+
     - **Property 2: Patient ID Uniqueness**
     - **Validates: Requirements 1.4**
 
-  - [ ] 3.4 Implement VitalSignsRepository
+  - [x] 3.4 Implement VitalSignsRepository
     - Create time-series storage for vital signs
     - Implement historical data queries with time range filtering
     - _Requirements: 2.2, 2.4, 4.2_
 
-  - [ ]* 3.5 Write property test for vital signs storage
+  - [x] 3.5 Write property test for vital signs storage
+
     - **Property 5: Vital Signs Storage with Timestamps**
     - **Validates: Requirements 2.2, 2.4**
 
-  - [ ] 3.6 Implement RiskAssessmentRepository
+  - [x] 3.6 Implement RiskAssessmentRepository
     - Create storage for risk assessments with proper linkage
     - Implement risk-based patient queries
     - _Requirements: 3.2, 3.3, 4.3_
 
-- [ ] 4. Checkpoint - Database layer validation
+- [x] 4. Checkpoint - Database layer validation
   - Ensure all repository tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement business logic services
-  - [ ] 5.1 Create PatientService
+- [-] 5. Implement business logic services
+  - [x] 5.1 Create PatientService
     - Implement patient registration logic
     - Add business rule validation and error handling
     - _Requirements: 1.1, 1.2, 1.3, 1.5_
 
-  - [ ]* 5.2 Write property test for registration triggers risk assessment
+  - [ ] 5.2 Write property test for registration triggers risk assessment
+
     - **Property 3: Registration Triggers Risk Assessment**
     - **Validates: Requirements 1.3**
 
@@ -89,7 +92,8 @@ This implementation plan creates a Python-based RESTful API system for patient r
     - Add model input validation and response parsing
     - _Requirements: 3.1, 3.2, 3.4, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ]* 5.6 Write property test for risk model input format compliance
+  - [ ] 5.6 Write property test for risk model input format compliance
+
     - **Property 8: Risk Model Input Format Compliance**
     - **Validates: Requirements 5.1, 5.4**
 
