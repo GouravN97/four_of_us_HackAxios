@@ -100,9 +100,6 @@ API Layer (FastAPI)
 ├── VitalSigns (time-series)
 └── RiskAssessment
 
-shell
-Copy code
-
 ### Frontend Flow
 
 Login
@@ -113,8 +110,6 @@ Dashboard
 └─ Patient Logs
 └─ Add / Update Vitals
 
-markdown
-Copy code
 
 ---
 
@@ -157,22 +152,20 @@ git clone https://github.com/GouravN97/four_of_us_HackAxios
 cd four_of_us_HackAxios
 Frontend
 bash
-Copy code
 npm install
 npm run dev
 Backend
 bash
-Copy code
 cd backend
 pip install -r requirements.txt
 python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000
 Optional: Populate Database
 bash
-Copy code
-python populate_database.py
+###
+python .\populate_db_direct.py
+
 🔐 Demo Credentials
 yaml
-Copy code
 Username: H123
 First Name: Harsh
 Last Name: Mishra
@@ -211,3 +204,4 @@ Native mobile applications
 
 📎 Repository
 https://github.com/GouravN97/four_of_us_HackAxios
+
