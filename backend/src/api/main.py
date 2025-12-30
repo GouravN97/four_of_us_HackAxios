@@ -597,11 +597,9 @@ app.add_middleware(EnhancedInputSanitizationMiddleware)
 # Add content validation middleware (validates content type and size)
 app.add_middleware(ContentValidationMiddleware)
 
-# Add enhanced rate limiting middleware (per-endpoint limits)
-app.add_middleware(EnhancedRateLimitingMiddleware, global_max_requests=10000, global_window_seconds=60)
-
-# Add basic rate limiting middleware (IP-based protection)
-app.add_middleware(RateLimitingMiddleware, max_requests=5000, window_seconds=60)
+# Rate limiting disabled for development
+# app.add_middleware(EnhancedRateLimitingMiddleware, global_max_requests=10000, global_window_seconds=60)
+# app.add_middleware(RateLimitingMiddleware, max_requests=5000, window_seconds=60)
 
 # Add enhanced authentication middleware (disabled by default for demo, enable with require_auth=True)
 # In production, set require_auth=True to enforce API key authentication
@@ -891,7 +889,9 @@ app.openapi = custom_openapi
 from src.api.patients import router as patients_router
 from src.api.vitals import router as vitals_router
 from src.api.icu import router as icu_router
+from src.api.simulation import router as simulation_router
 
 app.include_router(patients_router)
 app.include_router(vitals_router)
 app.include_router(icu_router)
+app.include_router(simulation_router)

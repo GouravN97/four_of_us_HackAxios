@@ -142,6 +142,38 @@ export async function getPatientHistory(patientId, options = {}) {
 }
 
 /**
+ * Get AI-generated risk explanation for a patient
+ * @param {string} patientId - Patient ID
+ * @returns {Object} - Risk explanation with LLM-generated text
+ */
+export async function getPatientExplanation(patientId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}/explanation`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error(`Failed to get explanation for ${patientId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a patient and all associated records
+ * @param {string} patientId - Patient ID to delete
+ * @returns {Object} - Deletion result with counts of deleted records
+ */
+export async function deletePatient(patientId) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/patients/${patientId}`, {
+      method: 'DELETE',
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error(`Failed to delete patient ${patientId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Get all patients with their latest status
  * This fetches high-risk patients and can be extended to fetch all patients
  */
@@ -341,6 +373,7 @@ export default {
   getHighRiskPatients,
   getPatientHistory,
   getAllPatients,
+  deletePatient,
   transformToPatientLog,
   transformToPrioritization,
   transformHistoryToLogs,
@@ -444,6 +477,85 @@ export async function getICULoadForecast(recentData) {
     return await handleResponse(response);
   } catch (error) {
     console.error('Failed to get ICU load forecast:', error);
+    throw error;
+  }
+}
+
+
+// ============================================
+// Simulation API Functions
+// ============================================
+
+/**
+ * Start the time simulation
+ * @param {number} hoursAfterFirstPatient - Hours after first patient to start simulation
+ */
+export async function startSimulation(hoursAfterFirstPatient = 3) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/simulation/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hours_after_first_patient: hoursAfterFirstPatient }),
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Failed to start simulation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Stop the time simulation
+ */
+export async function stopSimulation() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/simulation/stop`, {
+      method: 'POST',
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Failed to stop simulation:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get current simulation time
+ */
+export async function getSimulationTime() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/simulation/time`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Failed to get simulation time:', error);
+    throw error;
+  }
+}
+
+/**
+ * Trigger a simulation tick (generates new vitals for all patients)
+ */
+export async function simulationTick() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/simulation/tick`, {
+      method: 'POST',
+    });
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Failed to trigger simulation tick:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get simulation status
+ */
+export async function getSimulationStatus() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/simulation/status`);
+    return await handleResponse(response);
+  } catch (error) {
+    console.error('Failed to get simulation status:', error);
     throw error;
   }
 }

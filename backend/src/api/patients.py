@@ -395,3 +395,209 @@ async def get_patient_status(
             status_code=500,
             detail="An unexpected error occurred. Please try again later.",
         )
+
+
+@router.delete(
+    "/{patient_id}",
+    responses={
+        200: {"description": "Patient deleted successfully"},
+        400: {"model": ErrorResponse, "description": "Invalid patient ID format"},
+        404: {"model": ErrorResponse, "description": "Patient not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Delete a patient",
+    description="""
+    Delete a patient and all associated records (vital signs, risk assessments).
+    
+    This endpoint:
+    - Validates patient ID format
+    - Deletes all risk assessments for the patient
+    - Deletes all vital signs for the patient
+    - Deletes the patient record
+    - Also removes any ICU admissions if applicable
+    
+    **Warning:** This action is irreversible.
+    """,
+)
+async def delete_patient(
+    patient_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Delete a patient and all associated data.
+    
+    Args:
+        patient_id: Unique patient identifier
+        db: Database session
+        
+    Returns:
+        Success message with deleted patient ID
+        
+    Raises:
+        HTTPException: 400 for invalid patient ID, 404 if patient not found
+    """
+    try:
+        # Validate and sanitize patient ID
+        try:
+            sanitized_patient_id = validate_patient_id(patient_id)
+        except ValueError as e:
+            logger.warning(f"Invalid patient ID format: {patient_id} - {e}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid patient ID format: {str(e)}",
+            )
+        
+        # Check if patient exists
+        patient_repo = PatientRepository(db)
+        patient = patient_repo.get_by_id(sanitized_patient_id)
+        if not patient:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Patient {sanitized_patient_id} not found",
+            )
+        
+        # Delete associated records first (foreign key constraints)
+        risk_repo = RiskAssessmentRepository(db)
+        vital_signs_repo = VitalSignsRepository(db)
+        
+        # Delete risk assessments
+        risk_count = risk_repo.delete_for_patient(sanitized_patient_id)
+        logger.info(f"Deleted {risk_count} risk assessments for patient {sanitized_patient_id}")
+        
+        # Delete vital signs
+        vitals_count = vital_signs_repo.delete_for_patient(sanitized_patient_id)
+        logger.info(f"Deleted {vitals_count} vital signs for patient {sanitized_patient_id}")
+        
+        # Delete ICU admissions if they exist
+        try:
+            from src.models.icu_models import ICUAdmission
+            db.query(ICUAdmission).filter(ICUAdmission.patient_id == sanitized_patient_id).delete()
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Could not delete ICU admissions for {sanitized_patient_id}: {e}")
+        
+        # Delete patient record
+        patient_repo.delete(sanitized_patient_id)
+        
+        logger.info(f"Patient {sanitized_patient_id} deleted successfully")
+        
+        return {
+            "success": True,
+            "message": f"Patient {sanitized_patient_id} deleted successfully",
+            "patient_id": sanitized_patient_id,
+            "deleted_records": {
+                "risk_assessments": risk_count,
+                "vital_signs": vitals_count
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting patient {patient_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to delete patient. Please try again later.",
+        )
+
+
+@router.get(
+    "/{patient_id}/explanation",
+    responses={
+        200: {"description": "Risk explanation retrieved successfully"},
+        400: {"model": ErrorResponse, "description": "Invalid patient ID format"},
+        404: {"model": ErrorResponse, "description": "Patient not found"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Get AI-generated risk explanation for a patient",
+    description="""
+    Get an AI-generated explanation for a patient's risk assessment using Groq LLM.
+    
+    This endpoint returns:
+    - Risk score and category
+    - LLM-generated explanation of why the patient has this risk level
+    - Contributing factors from vital signs
+    
+    Requires GROQ_API_KEY environment variable for LLM explanations.
+    Falls back to rule-based explanation if API key is not set.
+    """,
+)
+async def get_patient_explanation(
+    patient_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Get AI-generated risk explanation for a patient.
+    
+    Args:
+        patient_id: Unique patient identifier
+        db: Database session
+        
+    Returns:
+        Risk assessment with LLM-generated explanation
+    """
+    from src.utils.patient_risk_ml_client import PatientRiskMLClient
+    
+    try:
+        # Validate patient ID
+        try:
+            sanitized_patient_id = validate_patient_id(patient_id)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid patient ID format: {str(e)}")
+        
+        # Get patient and vitals
+        patient_repo = PatientRepository(db)
+        vital_signs_repo = VitalSignsRepository(db)
+        
+        patient = patient_repo.get_by_id(sanitized_patient_id)
+        if not patient:
+            raise HTTPException(status_code=404, detail=f"Patient {sanitized_patient_id} not found")
+        
+        latest_vitals = vital_signs_repo.get_latest_for_patient(sanitized_patient_id)
+        if not latest_vitals:
+            raise HTTPException(status_code=404, detail=f"No vital signs found for patient {sanitized_patient_id}")
+        
+        # Get explanation from ML client
+        ml_client = PatientRiskMLClient()
+        
+        arrival_mode = "Ambulance" if patient.arrival_mode == ArrivalModeEnum.AMBULANCE else "Walk-in"
+        
+        explanation_result = ml_client.get_risk_explanation(
+            heart_rate=latest_vitals.heart_rate,
+            systolic_bp=latest_vitals.systolic_bp,
+            diastolic_bp=latest_vitals.diastolic_bp,
+            respiratory_rate=latest_vitals.respiratory_rate,
+            oxygen_saturation=latest_vitals.oxygen_saturation,
+            temperature=latest_vitals.temperature,
+            arrival_mode=arrival_mode,
+            acuity_level=patient.acuity_level
+        )
+        
+        return {
+            "patient_id": sanitized_patient_id,
+            "risk_score": explanation_result['risk_score'],
+            "risk_category": explanation_result['risk_category'],
+            "explanation": explanation_result['explanation'],
+            "contributing_factors": explanation_result['contributing_factors'],
+            "llm_generated": explanation_result['llm_generated'],
+            "vitals": {
+                "heart_rate": latest_vitals.heart_rate,
+                "systolic_bp": latest_vitals.systolic_bp,
+                "diastolic_bp": latest_vitals.diastolic_bp,
+                "respiratory_rate": latest_vitals.respiratory_rate,
+                "oxygen_saturation": latest_vitals.oxygen_saturation,
+                "temperature": latest_vitals.temperature
+            },
+            "acuity_level": patient.acuity_level,
+            "arrival_mode": arrival_mode,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating explanation for patient {patient_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate risk explanation. Please try again later.",
+        )

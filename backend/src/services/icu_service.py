@@ -11,7 +11,7 @@ from uuid import uuid4
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.models.db_models import Patient, RiskAssessment
+from src.models.db_models import Patient, RiskAssessment, RiskCategoryEnum
 from src.models.icu_models import ICUAdmission, ICUOccupancyLog, ICUAdmissionStatus
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ICUService:
     """Service for ICU admission and occupancy management."""
     
-    TOTAL_ICU_BEDS = 60
+    TOTAL_ICU_BEDS = 15
     
     def __init__(self, db: Session):
         self.db = db
@@ -162,7 +162,7 @@ class ICUService:
             RiskAssessment, ICUAdmission.patient_id == RiskAssessment.patient_id
         ).filter(
             ICUAdmission.status == ICUAdmissionStatus.ADMITTED.value,
-            RiskAssessment.risk_category == "HIGH"
+            RiskAssessment.risk_category == RiskCategoryEnum.HIGH
         ).distinct(ICUAdmission.patient_id).count()
         
         return {
@@ -235,7 +235,7 @@ class ICUService:
         
         high_risk = self.db.query(ICUAdmission).filter(
             ICUAdmission.status == ICUAdmissionStatus.ADMITTED.value,
-            ICUAdmission.risk_category_at_admission == "HIGH"
+            ICUAdmission.risk_category_at_admission == RiskCategoryEnum.HIGH.value
         ).count()
         
         if existing:

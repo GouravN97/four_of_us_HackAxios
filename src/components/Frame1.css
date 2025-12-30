@@ -81,6 +81,40 @@
   align-items: center;
 }
 
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sim-time {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0B3C43;
+  background: #E8F4F3;
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sim-badge {
+  background: #10B981;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .header-logo {
   width: 50px;
   height: 28px;
@@ -202,18 +236,16 @@
 }
 
 .chart-card {
-  height: 175px;
   background: #FFFFFF;
   border-radius: 12px;
-  padding: 18px 14px 10px;
+  padding: 10px 14px;
 }
 
 .chart-card-wide {
   width: 100%;
-  height: 175px;
   background: #FFFFFF;
   border-radius: 12px;
-  padding: 18px 14px 10px;
+  padding: 10px 14px;
   margin-bottom: 22px;
 }
 
@@ -222,7 +254,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 5px;
+  margin-top: 2px;
 }
 
 .legend-line {

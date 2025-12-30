@@ -80,6 +80,40 @@
   align-items: center;
 }
 
+.frame2 .header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame2 .sim-time {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0B3C43;
+  background: #E8F4F3;
+  padding: 6px 14px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.frame2 .sim-badge {
+  background: #10B981;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  animation: pulse-badge 2s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
 .frame2 .header-logo {
   width: 50px;
   height: 28px;
@@ -199,11 +233,19 @@
 /* Charts */
 .frame2 .chart-card-wide {
   width: 100%;
-  height: 175px;
   background: #FFFFFF;
   border-radius: 12px;
-  padding: 18px 14px 10px;
-  margin-bottom: 30px;
+  padding: 12px 14px 14px;
+  margin-bottom: 20px;
+}
+
+.frame2 .chart-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: #082D32;
+  text-align: center;
+  margin-bottom: 8px;
 }
 
 .frame2 .chart-legend {

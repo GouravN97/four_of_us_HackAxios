@@ -80,6 +80,22 @@
   align-items: center;
 }
 
+.frame3 .header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frame3 .sim-time {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: #0B3C43;
+  background: #E8F4F3;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
 .frame3 .header-logo {
   width: 50px;
   height: 28px;

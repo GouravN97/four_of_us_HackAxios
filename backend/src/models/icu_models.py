@@ -108,7 +108,7 @@ class ICUOccupancyLog(Base):
         comment="Number of patients in ICU at this hour"
     )
     beds_total: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=60,
+        Integer, nullable=False, default=15,
         comment="Total ICU beds available"
     )
     beds_occupied: Mapped[int] = mapped_column(

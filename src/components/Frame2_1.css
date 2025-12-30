@@ -72,7 +72,7 @@
 .table-container {
   flex: 1;
   overflow-y: auto;
-  max-height: 400px;
+  max-height: 500px;
   border-radius: 10px;
   border: 1px solid #E5E5E5;
 }
@@ -242,6 +242,25 @@
   line-height: 1.5;
 }
 
+.vitals-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #E8F4F3;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.vitals-summary span {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: #082D32;
+  background: #FFFFFF;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
 .close-explainability-btn {
   margin-top: 20px;
   width: 100%;
@@ -259,4 +278,57 @@
 
 .close-explainability-btn:hover {
   background: #00BDB7;
+}
+
+
+/* LLM Badge */
+.llm-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Contributing Factors List */
+.contributing-factors {
+  background: #FFF8E1;
+  padding: 12px 12px 12px 30px;
+  border-radius: 8px;
+  margin: 8px 0;
+  border-left: 4px solid #F59E0B;
+}
+
+.contributing-factors li {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: #082D32;
+  margin-bottom: 6px;
+}
+
+.contributing-factors li:last-child {
+  margin-bottom: 0;
+}
+
+/* Loading state for explanation */
+.explainability-text.loading {
+  color: #666;
+  font-style: italic;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Wider popup for more content */
+.explainability-popup {
+  width: 550px;
+  max-height: 85vh;
+  overflow-y: auto;
 }

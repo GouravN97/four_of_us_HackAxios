@@ -17,11 +17,15 @@ ml_models_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'ML_m
 sys.path.append(ml_models_path)
 
 try:
-    from inference import predict_patient_risk, calculate_risk_score
+    from inference import predict_patient_risk, calculate_risk_score, generate_explanation
 except ImportError:
     # Fallback if inference module is not available
     predict_patient_risk = None
     calculate_risk_score = None
+    generate_explanation = None
+
+# Groq API key for LLM explanations
+GROQ_API_KEY = os.getenv('GROQ_API_KEY', '')
 
 from src.utils.error_handling import (
     handle_service_error,
@@ -342,3 +346,139 @@ class PatientRiskMLClient:
             "feature_count": len(self.feature_names) if self.feature_names else 0,
             "feature_names": list(self.feature_names) if self.feature_names else []
         }
+    
+    def get_risk_explanation(self, heart_rate: float, systolic_bp: float, diastolic_bp: float,
+                            respiratory_rate: float, oxygen_saturation: float, temperature: float,
+                            arrival_mode: str, acuity_level: int) -> Dict[str, Any]:
+        """
+        Get risk prediction with LLM-generated explanation using Groq API.
+        
+        Args:
+            heart_rate: Heart rate in bpm
+            systolic_bp: Systolic blood pressure in mmHg
+            diastolic_bp: Diastolic blood pressure in mmHg
+            respiratory_rate: Respiratory rate in breaths/min
+            oxygen_saturation: Oxygen saturation percentage
+            temperature: Body temperature in Celsius
+            arrival_mode: Patient arrival mode ("Ambulance" or "Walk-in")
+            acuity_level: Clinical severity rating (1-5)
+            
+        Returns:
+            Dictionary with risk assessment and LLM explanation
+        """
+        # First get the risk prediction
+        risk_score, risk_category, processing_time = self.predict_risk(
+            heart_rate=heart_rate,
+            systolic_bp=systolic_bp,
+            diastolic_bp=diastolic_bp,
+            respiratory_rate=respiratory_rate,
+            oxygen_saturation=oxygen_saturation,
+            temperature=temperature,
+            arrival_mode=arrival_mode,
+            acuity_level=acuity_level
+        )
+        
+        # Prepare patient data for explanation
+        patient_vitals = {
+            'heartrate': heart_rate,
+            'sbp': systolic_bp,
+            'dbp': diastolic_bp,
+            'resprate': respiratory_rate,
+            'o2sat': oxygen_saturation,
+            'temperature': temperature,
+            'acuity': acuity_level,
+            'arrival_ambulance': 1 if arrival_mode == "Ambulance" else 0
+        }
+        
+        # Build result dict for explanation function
+        result = {
+            'risk_score': risk_score,
+            'final_triage_category': risk_category,
+            'ml_probability': risk_score / 100,
+            'contributing_factors': self._get_contributing_factors(patient_vitals)
+        }
+        
+        # Generate LLM explanation if Groq API key is available
+        explanation = None
+        if GROQ_API_KEY and generate_explanation is not None:
+            try:
+                explanation = generate_explanation(result, patient_vitals, GROQ_API_KEY)
+                logger.info(f"Generated LLM explanation for risk assessment")
+            except Exception as e:
+                logger.warning(f"Failed to generate LLM explanation: {e}")
+                explanation = self._generate_fallback_explanation(result, patient_vitals)
+        else:
+            # Fallback to rule-based explanation
+            explanation = self._generate_fallback_explanation(result, patient_vitals)
+        
+        return {
+            'risk_score': risk_score,
+            'risk_category': risk_category,
+            'explanation': explanation,
+            'contributing_factors': result['contributing_factors'],
+            'processing_time_ms': processing_time,
+            'llm_generated': GROQ_API_KEY and generate_explanation is not None
+        }
+    
+    def _get_contributing_factors(self, patient: Dict[str, Any]) -> list:
+        """Get list of contributing factors based on vital signs."""
+        factors = []
+        
+        if patient['o2sat'] < 88:
+            factors.append("Critical hypoxemia (SpO₂ < 88%)")
+        elif patient['o2sat'] < 92:
+            factors.append("Low oxygen saturation")
+        elif patient['o2sat'] < 95:
+            factors.append("Borderline oxygen saturation")
+        
+        if patient['sbp'] < 90:
+            factors.append("Hypotension (SBP < 90)")
+        elif patient['sbp'] > 160:
+            factors.append("Hypertension (SBP > 160)")
+        
+        if patient['resprate'] > 24:
+            factors.append("Tachypnea (RR > 24)")
+        elif patient['resprate'] > 20:
+            factors.append("Elevated respiratory rate")
+        
+        if patient['heartrate'] > 120:
+            factors.append("Tachycardia (HR > 120)")
+        elif patient['heartrate'] > 100:
+            factors.append("Elevated heart rate")
+        elif patient['heartrate'] < 50:
+            factors.append("Bradycardia (HR < 50)")
+        
+        if patient['temperature'] > 38.5:
+            factors.append("High fever")
+        elif patient['temperature'] > 38.0:
+            factors.append("Fever")
+        elif patient['temperature'] < 36.0:
+            factors.append("Hypothermia")
+        
+        if patient['acuity'] >= 4:
+            factors.append(f"High acuity level ({patient['acuity']})")
+        elif patient['acuity'] >= 3:
+            factors.append(f"Moderate acuity level ({patient['acuity']})")
+        
+        if patient['arrival_ambulance'] == 1:
+            factors.append("Arrived by ambulance")
+        
+        return factors
+    
+    def _generate_fallback_explanation(self, result: Dict[str, Any], patient: Dict[str, Any]) -> str:
+        """Generate a rule-based explanation when LLM is not available."""
+        risk_category = result['final_triage_category']
+        risk_score = result['risk_score']
+        factors = result['contributing_factors']
+        
+        if not factors:
+            return f"Patient classified as {risk_category} risk with a score of {risk_score:.1f}/100. Vital signs are within normal ranges. Routine monitoring is recommended."
+        
+        factors_text = ", ".join(factors[:-1]) + f" and {factors[-1]}" if len(factors) > 1 else factors[0]
+        
+        if risk_category == "HIGH":
+            return f"Patient classified as HIGH risk (score: {risk_score:.1f}/100) due to {factors_text}. Immediate clinical attention is recommended. Close monitoring of vital signs is essential."
+        elif risk_category == "MODERATE":
+            return f"Patient classified as MODERATE risk (score: {risk_score:.1f}/100). Contributing factors include {factors_text}. Regular monitoring and reassessment are advised."
+        else:
+            return f"Patient classified as LOW risk (score: {risk_score:.1f}/100). Minor concerns noted: {factors_text}. Standard care protocols apply."

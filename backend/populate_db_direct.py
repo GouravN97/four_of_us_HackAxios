@@ -238,7 +238,7 @@ def main():
             id=str(uuid4()),
             timestamp=hour_time,
             patient_count=patient_count,
-            beds_total=60,
+            beds_total=15,
             beds_occupied=patient_count,
             high_risk_count=min(patient_count, icu_admissions),
             new_admissions=random.randint(0, 2),

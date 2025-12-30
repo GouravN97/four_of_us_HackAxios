@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Frontend Data Sync Check",
+  "description": "When database models, API endpoints, or frontend components displaying data are modified, verify that the data shown in tables and graphs across all frontend pages correctly reflects the database values and API responses.\nThe graph titles and x axis values should not be far from the graphs in the first 3 pages",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "backend/src/models/*.py",
+      "backend/src/api/*.py",
+      "backend/src/repositories/*.py",
+      "backend/src/services/*.py",
+      "src/components/*.jsx",
+      "src/services/api.js"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A file related to data flow has been modified. Please verify that the data displayed in frontend tables and graphs remains synchronized with the database values. Check: 1) API endpoints return correct data from the database, 2) Frontend components correctly fetch and display this data, 3) Any data transformations maintain consistency, 4) Tables and charts show accurate, up-to-date values matching the database state.\n"
+  }
+}
