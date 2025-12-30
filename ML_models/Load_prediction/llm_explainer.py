@@ -94,6 +94,9 @@ Do not include any preamble, just provide the structured response."""
         
         return prompt
     
+    def explain_custom_prompt(self, prompt):
+        return self._call_groq(prompt)
+
     def _call_groq(self, prompt):
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -136,5 +139,94 @@ Do not include any preamble, just provide the structured response."""
             "explanation": result["choices"][0]["message"]["content"].strip(),
         }
 
+def explain_6_hour_forecast(predictions, groq_api_key):
+    """
+    Generate a single strategic explanation for the next 6 hours.
+    
+    This is an AGGREGATED explanation intended for ER decision-making,
+    not a per-hour micro explanation.
 
+    Args:
+        predictions: List of dicts from predict_next_6_hours()
+        groq_api_key: Groq API key (from env / secrets)
 
+    Returns:
+        dict with:
+            - overall_explanation (LLM text)
+            - total_expected
+            - peak_hour
+            - peak_count
+            - hourly_predictions
+    """
+
+    explainer = LLMExplainer(api_key=groq_api_key)
+
+    # -----------------------------
+    # Summary statistics
+    # -----------------------------
+    total_expected = sum(p['predicted_arrivals'] for p in predictions)
+    avg_per_hour = total_expected / len(predictions)
+
+    peak_pred = max(predictions, key=lambda x: x['predicted_arrivals'])
+    low_pred = min(predictions, key=lambda x: x['predicted_arrivals'])
+
+    # -----------------------------
+    # Build structured context
+    # -----------------------------
+    summary_context = f"""
+6-HOUR FORECAST SUMMARY:
+- Total expected arrivals: {total_expected} patients
+- Average per hour: {avg_per_hour:.1f} patients
+- Peak hour: {peak_pred['timestamp'].strftime('%I:%M %p')} 
+  ({peak_pred['predicted_arrivals']} patients)
+- Lowest hour: {low_pred['timestamp'].strftime('%I:%M %p')} 
+  ({low_pred['predicted_arrivals']} patients)
+
+HOURLY BREAKDOWN:
+"""
+
+    for i, pred in enumerate(predictions, start=1):
+        summary_context += (
+            f"Hour {i} ({pred['timestamp'].strftime('%I:%M %p')}): "
+            f"{pred['predicted_arrivals']} patients "
+            f"[{pred['lower_bound']}-{pred['upper_bound']}] "
+            f"({pred['confidence_level']})\n"
+        )
+
+    # -----------------------------
+    # LLM Prompt
+    # -----------------------------
+    prompt = f"""You are an ER operations advisor.
+
+{summary_context}
+
+INSTRUCTIONS:
+1. Summarize the overall arrival trend (increasing, decreasing, or stable)
+2. Identify the most critical hour requiring attention
+3. Give ONE clear staffing or operational recommendation
+4. Flag any surge or risk concerns if present
+
+Keep the response under 200 words.
+
+Format exactly as:
+FORECAST: ...
+CRITICAL PERIOD: ...
+RECOMMENDATION: ...
+[ALERT if needed]
+"""
+
+    # -----------------------------
+    # Call LLM safely
+    # -----------------------------
+    llm_response = explainer.explain_custom_prompt(prompt)
+
+    # -----------------------------
+    # Final API-ready output
+    # -----------------------------
+    return {
+        "overall_explanation": llm_response["explanation"],
+        "total_expected": total_expected,
+        "peak_hour": peak_pred["timestamp"],
+        "peak_count": peak_pred["predicted_arrivals"],
+        "hourly_predictions": predictions
+    }

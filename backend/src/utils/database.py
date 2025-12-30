@@ -17,6 +17,9 @@ from sqlalchemy.pool import StaticPool
 
 from src.models.db_models import Base
 
+# Import ICU models to ensure they're registered with Base
+from src.models.icu_models import ICUAdmission, ICUOccupancyLog
+
 # Load environment variables
 load_dotenv()
 

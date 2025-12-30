@@ -36,6 +36,13 @@ from src.utils.error_handling import (
     global_error_handler
 )
 
+# Import ICU service for automatic admission
+try:
+    from src.services.icu_service import ICUService
+    ICU_SERVICE_AVAILABLE = True
+except ImportError:
+    ICU_SERVICE_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -643,6 +650,19 @@ class RiskAssessmentService:
         except SQLAlchemyError as e:
             logger.error(f"Database error creating risk assessment: {e}")
             raise RiskAssessmentServiceError(f"Failed to store risk assessment: {str(e)}") from e
+        
+        finally:
+            # Check if patient should be admitted to ICU (HIGH risk)
+            if ICU_SERVICE_AVAILABLE and risk_category == "HIGH":
+                try:
+                    icu_service = ICUService(self.db)
+                    icu_service.check_and_admit_high_risk(
+                        patient_id=patient.patient_id,
+                        risk_score=risk_score,
+                        risk_category=risk_category
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to check ICU admission for patient {patient.patient_id}: {e}")
     
     def _fallback_risk_assessment(self, patient: Patient, vital_signs: VitalSigns) -> tuple[float, bool]:
         """

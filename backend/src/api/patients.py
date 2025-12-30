@@ -178,8 +178,34 @@ async def register_patient(
         )
 
 
+# NOTE: Static routes must be defined BEFORE /{patient_id} to avoid route conflicts
 
-# NOTE: /high-risk must be defined BEFORE /{patient_id} to avoid route conflicts
+@router.get(
+    "/all",
+    responses={
+        200: {"description": "All patient IDs retrieved successfully"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    summary="Get all patient IDs",
+    description="Get a list of all registered patient IDs in the system.",
+)
+async def get_all_patient_ids(
+    db: Session = Depends(get_db),
+):
+    """Get all patient IDs."""
+    try:
+        patient_repo = PatientRepository(db)
+        patients = patient_repo.get_all()
+        return {
+            "patient_ids": [p.patient_id for p in patients],
+            "total_count": len(patients),
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting all patients: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get(
     "/high-risk",
     response_model=HighRiskPatientsResponse,

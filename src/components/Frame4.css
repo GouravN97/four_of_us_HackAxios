@@ -259,3 +259,33 @@
 .frame4 .action-input:focus {
   outline: 2px solid #00BDB7;
 }
+
+
+/* Risk Level Styling */
+.frame4 .risk-high {
+  color: #DC2626;
+  font-weight: 700;
+  background: rgba(220, 38, 38, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.frame4 .risk-moderate {
+  color: #D97706;
+  font-weight: 600;
+  background: rgba(217, 119, 6, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.frame4 .risk-low {
+  color: #059669;
+  font-weight: 600;
+  background: rgba(5, 150, 105, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.frame4 .high-risk-row {
+  background: rgba(220, 38, 38, 0.05) !important;
+}

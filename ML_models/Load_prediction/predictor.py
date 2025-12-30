@@ -87,8 +87,12 @@ def predict_next_hour_enhanced(recent_data, model_data, confidence_level='90%'):
         features['avg_last_3h'] = recent_data['count'].iloc[-3:].mean()
     if 'trend_last_3h' in feature_cols:
         features['trend_last_3h'] = lag_1 - lag_3
-    if 'same_hour_yesterday' in feature_cols and len(recent_data) >= 24:
-        features['same_hour_yesterday'] = recent_data['count'].iloc[-24]
+    if 'same_hour_yesterday' in feature_cols:
+        if len(recent_data) >= 24:
+            features['same_hour_yesterday'] = recent_data['count'].iloc[-24]
+        else:
+            # Use average of available data as fallback
+            features['same_hour_yesterday'] = recent_data['count'].mean()
     
     # Predict
     X_pred = pd.DataFrame([features])[feature_cols]
@@ -114,15 +118,77 @@ def predict_next_hour_enhanced(recent_data, model_data, confidence_level='90%'):
     )
     
     return {
-       "predicted_arrivals": prediction,
-        "range": [lower, upper],
+        "timestamp": next_timestamp,
+        "predicted_arrivals": prediction,
+        "lower_bound": lower_bound,
+        "upper_bound": upper_bound,
         "confidence_level": confidence,
+        "confidence_interval": confidence_level,
+        "expected_error": round(context_mae, 2),
 
-        "explanation_context": {
+        "reasoning": {
             "hour": features["hour"],
             "is_night": features.get("is_night", 0),
             "is_evening_rush": features.get("is_evening_rush", 0),
-            "recent_trend": "increasing" if features.get("trend_last_3h", 0) > 0 else "decreasing",
+            "recent_trend": "increasing"
+                if features.get("trend_last_3h", 0) > 0
+                else "decreasing",
             "high_load_recent": bool(features["high_load_recent"]),
         }
     }
+
+
+def predict_next_6_hours(recent_data, model_data, confidence_level='90%'):
+    """
+    Predict arrivals for next 6 hours using iterative forecasting
+    
+    How it works:
+    - Hour 1: Use actual data (lag_1, lag_2, lag_3)
+    - Hour 2: Use actual data + Hour 1 prediction
+    - Hour 3: Use actual data + Hour 1&2 predictions
+    ... and so on
+    
+    Args:
+        recent_data: DataFrame with 'timestamp' and 'count'
+        model_data: Model dictionary from pickle
+        confidence_level: '90%', '95%', or '99%'
+    
+    Returns:
+        List of 6 prediction dictionaries
+    """
+    
+    # Prepare working data
+    working_data = recent_data.copy()
+    working_data['timestamp'] = pd.to_datetime(working_data['timestamp'])
+    working_data = working_data.sort_values('timestamp').reset_index(drop=True)
+    
+    predictions = []
+    
+    print(f"\n🔮 Predicting next 6 hours...")
+    print(f"   Starting from: {working_data['timestamp'].iloc[-1]}")
+    print()
+    
+    # Predict each hour iteratively
+    for hour in range(1, 7):
+        # Predict next hour
+        pred = predict_next_hour_enhanced(working_data, model_data, confidence_level)
+        predictions.append(pred)
+        
+        print(f"   Hour {hour}: {pred['timestamp'].strftime('%I:%M %p')} → "
+              f"{pred['predicted_arrivals']} patients "
+              f"[{pred['lower_bound']}-{pred['upper_bound']}] "
+              f"({pred['confidence_level']})")
+        
+        # Add prediction to working data for next iteration
+        new_row = pd.DataFrame({
+            'timestamp': [pred['timestamp']],
+            'count': [pred['predicted_arrivals']]
+        })
+        working_data = pd.concat([working_data, new_row], ignore_index=True)
+        
+        # Keep only last 50 hours to maintain efficiency
+        if len(working_data) > 50:
+            working_data = working_data.tail(50).reset_index(drop=True)
+    
+    print(f"\n   ✅ 6-hour forecast complete")
+    return predictions
