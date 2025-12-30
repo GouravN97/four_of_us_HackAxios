@@ -73,56 +73,60 @@ This implementation plan creates a Python-based RESTful API system for patient r
     - Add business rule validation and error handling
     - _Requirements: 1.1, 1.2, 1.3, 1.5_
 
-  - [ ] 5.2 Write property test for registration triggers risk assessment
+  - [x] 5.2 Write property test for registration triggers risk assessment
 
     - **Property 3: Registration Triggers Risk Assessment**
     - **Validates: Requirements 1.3**
 
-  - [ ] 5.3 Create VitalSignsService
+  - [x] 5.3 Create VitalSignsService
     - Implement vital signs update logic with validation
     - Add error handling for invalid updates
     - _Requirements: 2.1, 2.2, 2.3, 2.5_
 
-  - [ ]* 5.4 Write property test for data integrity under invalid updates
+  - [x] 5.4 Write property test for data integrity under invalid updates
+
     - **Property 7: Data Integrity Under Invalid Updates**
     - **Validates: Requirements 2.5**
 
-  - [ ] 5.5 Create RiskAssessmentService with ML model integration
+   - [x] 5.5 Create RiskAssessmentService with ML model integration
     - Implement risk model interface and error handling
     - Add model input validation and response parsing
     - _Requirements: 3.1, 3.2, 3.4, 5.1, 5.2, 5.3, 5.4, 5.5_
 
-  - [ ] 5.6 Write property test for risk model input format compliance
+  - [x] 5.6 Write property test for risk model input format compliance
 
     - **Property 8: Risk Model Input Format Compliance**
     - **Validates: Requirements 5.1, 5.4**
 
-  - [ ]* 5.7 Write property test for vital signs update triggers risk assessment
+  - [x] 5.7 Write property test for vital signs update triggers risk assessment
+
     - **Property 6: Vital Signs Update Triggers Risk Assessment**
     - **Validates: Requirements 2.3**
 
 - [ ] 6. Implement REST API controllers
-  - [ ] 6.1 Create FastAPI application setup
+  - [x] 6.1 Create FastAPI application setup
     - Configure FastAPI app with middleware and error handlers
     - Set up request/response logging and validation
     - _Requirements: 6.4, 6.5_
 
-  - [ ] 6.2 Implement PatientController endpoints
+  - [x] 6.2 Implement PatientController endpoints
     - POST /patients - Patient registration
     - GET /patients/{id} - Current patient status
     - GET /patients/high-risk - Risk-based queries
     - _Requirements: 1.1, 1.2, 1.3, 4.1, 4.3_
 
-  - [ ]* 6.3 Write property test for current patient status retrieval
+  - [x] 6.3 Write property test for current patient status retrieval
+
     - **Property 10: Current Patient Status Retrieval**
     - **Validates: Requirements 4.1**
 
-  - [ ] 6.4 Implement VitalSignsController endpoints
+  - [x] 6.4 Implement VitalSignsController endpoints
     - PUT /patients/{id}/vitals - Update vital signs
     - GET /patients/{id}/history - Historical data
     - _Requirements: 2.1, 2.2, 2.3, 4.2_
 
-  - [ ]* 6.5 Write property test for historical data chronological ordering
+  - [ ] 6.5 Write property test for historical data chronological ordering
+
     - **Property 11: Historical Data Chronological Ordering**
     - **Validates: Requirements 4.2**
 
@@ -131,7 +135,8 @@ This implementation plan creates a Python-based RESTful API system for patient r
     - Implement proper error responses without information leakage
     - _Requirements: 6.2, 6.4, 6.5_
 
-  - [ ]* 6.7 Write property test for input sanitization security
+  - [ ] 6.7 Write property test for input sanitization security
+
     - **Property 14: Input Sanitization Security**
     - **Validates: Requirements 6.4**
 
@@ -153,7 +158,8 @@ This implementation plan creates a Python-based RESTful API system for patient r
     - Add rate limiting and authentication middleware
     - _Requirements: 6.4, 6.5_
 
-  - [ ]* 8.4 Write property test for error response security
+  - [ ] 8.4 Write property test for error response security
+
     - **Property 15: Error Response Security**
     - **Validates: Requirements 6.2, 6.5**
 

@@ -120,6 +120,12 @@ class PatientService:
             raise PatientAlreadyExistsError(
                 f"Patient with ID {registration_data.patient_id} already exists"
             ) from e
+        except PatientAlreadyExistsError:
+            # Re-raise PatientAlreadyExistsError without wrapping
+            raise
+        except ValidationError:
+            # Re-raise ValidationError without wrapping
+            raise
         except SQLAlchemyError as e:
             logger.error(f"Database error during patient registration: {e}")
             raise PatientServiceError(f"Failed to register patient: {str(e)}") from e
@@ -256,7 +262,14 @@ class PatientService:
             raise ValidationError(f"Acuity level must be between 1 and 5, got {registration_data.acuity_level}")
         
         # Validate initial vitals timestamp is not in the future
-        if registration_data.initial_vitals.timestamp > datetime.utcnow():
+        current_time = datetime.utcnow()
+        timestamp = registration_data.initial_vitals.timestamp
+        
+        # Handle timezone-aware timestamps by converting to naive UTC
+        if timestamp.tzinfo is not None:
+            timestamp = timestamp.replace(tzinfo=None)
+        
+        if timestamp > current_time:
             raise ValidationError("Initial vitals timestamp cannot be in the future")
         
         # Additional business rule: High acuity patients (4-5) arriving by walk-in should be flagged

@@ -5,11 +5,15 @@ A real-time patient deterioration risk assessment system for hospital environmen
 ## 🏥 Features
 
 - **Real-time Risk Assessment**: ML-powered continuous monitoring with risk scoring
-- **Vital Signs Management**: Time-series storage and tracking of patient vitals
-- **Medical Validation**: Healthcare standards-compliant input validation with medical ranges
-- **Historical Analytics**: Query patient data and risk trends over time
-- **RESTful API**: Clean, documented endpoints with comprehensive data models
+- **Vital Signs Management**: Comprehensive time-series storage, validation, and historical queries with REST API
+- **Medical Validation**: Healthcare standards-compliant input validation with medical ranges and business rules
+- **Historical Analytics**: Query patient data and risk trends over time with chronological ordering and time-range filtering
+- **RESTful API**: Clean, documented endpoints with comprehensive data models and automatic OpenAPI documentation
+- **Automatic Risk Triggering**: Vital signs updates automatically trigger ML risk assessments
+- **Graceful Degradation**: System continues storing vital signs even when ML model is unavailable
 - **Property-Based Testing**: Robust validation through automated correctness testing
+- **Business Logic Services**: Complete service layer with patient, vital signs, and risk assessment management
+- **Error Handling**: Comprehensive exception handling with structured error responses
 
 ## 📊 Vital Signs Validation
 
@@ -25,6 +29,22 @@ The system validates all vital signs against medical standards:
 | Temperature | 30-45 | °C |
 
 Additional validation ensures diastolic BP < systolic BP and all values are within safe medical ranges.
+
+## 🔍 Business Rules & Validation
+
+The system implements comprehensive business logic validation:
+
+### Vital Signs Business Rules
+- **Change Detection**: Monitors for extreme changes between consecutive readings that may indicate data entry errors
+- **Duplicate Prevention**: Prevents identical vital signs entries within short time windows (5 minutes)
+- **Physiological Validation**: Warns about unusual combinations (e.g., very high heart rate with low temperature)
+- **Medical Constraints**: Enforces relationships like diastolic < systolic blood pressure
+
+### Data Integrity
+- **Patient Existence**: All vital signs updates validate patient existence before processing
+- **Timestamp Management**: Automatic timestamp assignment with UTC standardization
+- **Error Recovery**: Graceful handling of database errors with detailed logging
+- **Audit Trail**: Complete tracking of who recorded vital signs and when
 
 ## 🗄️ Database Features
 
@@ -111,7 +131,13 @@ mypy src
 ```
 src/
 ├── api/                    # FastAPI controllers
+│   ├── main.py            # ✅ Application setup with middleware and error handling
+│   ├── patients.py        # ✅ Patient registration and status endpoints
+│   └── vitals.py          # ✅ Vital signs update and historical data endpoints
 ├── services/               # Business logic layer
+│   ├── patient_service.py # ✅ Patient registration and management
+│   ├── vital_signs_service.py # ✅ Vital signs updates and historical queries
+│   └── risk_assessment_service.py # ✅ ML-powered risk assessment
 ├── repositories/           # Data access layer
 ├── models/                 # Data models (Pydantic + SQLAlchemy)
 │   ├── api_models.py      # ✅ Pydantic request/response models with validation
@@ -150,6 +176,24 @@ The system follows a layered architecture with comprehensive data validation:
 - **RiskAssessment**: ML risk predictions linked to vital signs and patients
 - **Relationships**: Proper foreign keys and cascading for data integrity
 
+### Business Logic Services (✅ Implemented)
+
+**PatientService:**
+- Patient registration with automatic risk assessment triggering
+- Unique ID validation and duplicate prevention
+- Patient status retrieval and management
+
+**VitalSignsService:**
+- Comprehensive vital signs update workflow with medical validation
+- Historical data queries with time range filtering and chronological ordering
+- Business rule validation including duplicate detection and change monitoring
+- Integration with risk assessment triggering on vital signs updates
+
+**RiskAssessmentService:**
+- ML model integration with structured input/output handling
+- Risk score calculation and storage with assessment history
+- Error handling for model unavailability and graceful degradation
+
 ## 🔒 Data Validation & Security
 
 - **Medical Range Validation**: All vital signs validated against clinical standards at both API and database levels
@@ -159,9 +203,28 @@ The system follows a layered architecture with comprehensive data validation:
 - **Type Safety**: Pydantic models ensure data integrity throughout the system
 - **Referential Integrity**: Foreign key relationships maintain data consistency
 
-## 📖 API Documentation
+## 📖 API Endpoints
 
-Once running, visit http://localhost:8000/docs for interactive API documentation with live examples.
+### Patient Management
+- **POST /patients** - Register new patient with initial vital signs
+- **GET /patients/{patient_id}** - Get current patient status
+- **GET /patients/high-risk** - Query high-risk patients
+
+### Vital Signs Management (✅ Implemented)
+- **PUT /patients/{patient_id}/vitals** - Update patient vital signs
+  - Validates vital signs against medical ranges
+  - Stores measurements with automatic timestamps
+  - Triggers ML risk assessment automatically
+  - Returns success confirmation with vital signs ID
+  
+- **GET /patients/{patient_id}/history** - Get historical vital signs and risk assessments
+  - Optional time range filtering (start_time, end_time)
+  - Optional result limiting (max 1000 data points)
+  - Returns chronologically ordered data (oldest first)
+  - Includes paired vital signs and risk assessments
+
+### Interactive Documentation
+Visit http://localhost:8000/docs for interactive API documentation with live examples and request/response schemas.
 
 ## 📋 API Usage Examples
 
@@ -201,6 +264,21 @@ curl -X PUT "http://localhost:8000/patients/P12345/vitals" \
   }'
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Vital signs updated successfully for patient P12345",
+  "data": {
+    "patient_id": "P12345",
+    "vital_signs_id": "vs_abc123",
+    "timestamp": "2024-01-15T11:00:00Z"
+  }
+}
+```
+
+**Note:** This endpoint automatically triggers a risk assessment using the ML model. If the model is unavailable, vital signs are still stored successfully.
+
 ### Get Current Patient Status
 
 ```bash
@@ -216,7 +294,43 @@ curl "http://localhost:8000/patients/high-risk"
 ### Get Patient History
 
 ```bash
+# Get all historical data
+curl "http://localhost:8000/patients/P12345/history"
+
+# Get data within time range
 curl "http://localhost:8000/patients/P12345/history?start_time=2024-01-15T00:00:00Z&end_time=2024-01-15T23:59:59Z"
+
+# Limit number of results
+curl "http://localhost:8000/patients/P12345/history?limit=100"
+```
+
+**Response:**
+```json
+{
+  "patient_id": "P12345",
+  "start_time": "2024-01-15T10:30:00Z",
+  "end_time": "2024-01-15T11:00:00Z",
+  "data_points": [
+    {
+      "vitals": {
+        "heart_rate": 85.0,
+        "systolic_bp": 140.0,
+        "diastolic_bp": 90.0,
+        "respiratory_rate": 18.0,
+        "oxygen_saturation": 96.0,
+        "temperature": 37.2,
+        "timestamp": "2024-01-15T10:30:00Z"
+      },
+      "risk_assessment": {
+        "risk_score": 0.35,
+        "risk_flag": false,
+        "assessment_time": "2024-01-15T10:30:05Z",
+        "model_version": "v1.0.0"
+      }
+    }
+  ],
+  "total_count": 1
+}
 ```
 
 ## 📊 Sample API Response

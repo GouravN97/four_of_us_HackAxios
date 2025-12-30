@@ -3,34 +3,232 @@ FastAPI main application for Patient Risk Classifier Backend.
 Configures the API with middleware, error handlers, and routing.
 """
 
+import logging
+import re
+import time
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any, Callable, Dict
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.models.api_models import ErrorResponse
 from src.utils.database import close_database, init_database
+
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("patient_risk_classifier")
+
+
+# Input sanitization patterns for security
+DANGEROUS_PATTERNS = [
+    r"<script[^>]*>.*?</script>",  # XSS script tags
+    r"javascript:",  # JavaScript protocol
+    r"on\w+\s*=",  # Event handlers
+    r"--",  # SQL comment
+    r";.*(?:drop|delete|truncate|alter|create|insert|update)",  # SQL injection
+    r"'\s*or\s*'",  # SQL injection OR
+    r"'\s*and\s*'",  # SQL injection AND
+    r"\$\{.*\}",  # Template injection
+    r"\{\{.*\}\}",  # Template injection
+]
+
+
+def sanitize_string(value: str) -> str:
+    """
+    Sanitize a string value to prevent injection attacks.
+    
+    Args:
+        value: The string to sanitize
+        
+    Returns:
+        Sanitized string with dangerous patterns removed
+    """
+    if not isinstance(value, str):
+        return value
+    
+    sanitized = value
+    for pattern in DANGEROUS_PATTERNS:
+        sanitized = re.sub(pattern, "", sanitized, flags=re.IGNORECASE)
+    
+    # Remove null bytes
+    sanitized = sanitized.replace("\x00", "")
+    
+    return sanitized.strip()
+
+
+def sanitize_dict(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recursively sanitize all string values in a dictionary.
+    
+    Args:
+        data: Dictionary to sanitize
+        
+    Returns:
+        Sanitized dictionary
+    """
+    if not isinstance(data, dict):
+        return data
+    
+    sanitized = {}
+    for key, value in data.items():
+        if isinstance(value, str):
+            sanitized[key] = sanitize_string(value)
+        elif isinstance(value, dict):
+            sanitized[key] = sanitize_dict(value)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                sanitize_dict(item) if isinstance(item, dict)
+                else sanitize_string(item) if isinstance(item, str)
+                else item
+                for item in value
+            ]
+        else:
+            sanitized[key] = value
+    return sanitized
+
+
+def create_secure_error_response(
+    error_code: str,
+    user_message: str,
+    request_id: str = None,
+    details: Dict[str, Any] = None
+) -> ErrorResponse:
+    """
+    Create a secure error response that doesn't expose sensitive information.
+    
+    Args:
+        error_code: Error type/code for categorization
+        user_message: User-friendly error message
+        request_id: Optional request ID for support reference
+        details: Optional safe details to include
+        
+    Returns:
+        ErrorResponse with sanitized content
+    """
+    safe_details = {}
+    if request_id:
+        safe_details["request_id"] = request_id
+    if details:
+        # Only include safe, non-sensitive details
+        safe_keys = {"field", "fields", "validation_errors", "allowed_values", "request_id"}
+        for key, value in details.items():
+            if key in safe_keys:
+                safe_details[key] = value
+    
+    return ErrorResponse(
+        error=error_code,
+        message=user_message,
+        details=safe_details if safe_details else None
+    )
+
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Middleware for logging all requests and responses with timing information."""
+    
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # Generate unique request ID for tracing
+        request_id = str(uuid.uuid4())[:8]
+        
+        # Store request ID in state for access in handlers
+        request.state.request_id = request_id
+        
+        # Log incoming request
+        start_time = time.time()
+        logger.info(
+            f"[{request_id}] Request: {request.method} {request.url.path} "
+            f"- Client: {request.client.host if request.client else 'unknown'}"
+        )
+        
+        # Process request
+        try:
+            response = await call_next(request)
+            
+            # Calculate processing time
+            process_time = time.time() - start_time
+            
+            # Log response
+            logger.info(
+                f"[{request_id}] Response: {response.status_code} "
+                f"- Duration: {process_time:.3f}s"
+            )
+            
+            # Add request ID to response headers for client-side tracing
+            response.headers["X-Request-ID"] = request_id
+            response.headers["X-Process-Time"] = f"{process_time:.3f}"
+            
+            return response
+            
+        except Exception as e:
+            process_time = time.time() - start_time
+            logger.error(
+                f"[{request_id}] Error during request processing: {type(e).__name__}: {str(e)} "
+                f"- Duration: {process_time:.3f}s"
+            )
+            raise
+
+
+class InputSanitizationMiddleware(BaseHTTPMiddleware):
+    """Middleware for sanitizing input data to prevent injection attacks."""
+    
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        request_id = getattr(request.state, "request_id", "unknown")
+        
+        # Sanitize query parameters
+        # Note: Query params are read-only, so we log warnings for suspicious content
+        for key, value in request.query_params.items():
+            sanitized = sanitize_string(value)
+            if sanitized != value:
+                logger.warning(
+                    f"[{request_id}] Potentially malicious content detected in query param '{key}'"
+                )
+        
+        # Sanitize path parameters (check for suspicious patterns)
+        path = request.url.path
+        for pattern in DANGEROUS_PATTERNS:
+            if re.search(pattern, path, re.IGNORECASE):
+                logger.warning(
+                    f"[{request_id}] Potentially malicious content detected in path: {path}"
+                )
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": "INVALID_REQUEST",
+                        "message": "Invalid request path",
+                        "details": None,
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                )
+        
+        return await call_next(request)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown events."""
     # Startup
-    print("🏥 Patient Risk Classifier Backend starting up...")
-    print("📊 Initializing database connections...")
+    logger.info("🏥 Patient Risk Classifier Backend starting up...")
+    logger.info("📊 Initializing database connections...")
     init_database()
+    logger.info("✅ Application startup complete")
 
     yield
 
     # Shutdown
-    print("🏥 Patient Risk Classifier Backend shutting down...")
-    print("📊 Closing database connections...")
+    logger.info("🏥 Patient Risk Classifier Backend shutting down...")
+    logger.info("📊 Closing database connections...")
     close_database()
+    logger.info("✅ Application shutdown complete")
 
 
 # Create FastAPI application
@@ -80,33 +278,83 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
+
+# Add input sanitization middleware
+app.add_middleware(InputSanitizationMiddleware)
+
 
 # Global exception handler
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     """Handle HTTP exceptions with consistent error response format."""
+    request_id = getattr(request.state, "request_id", "unknown")
+    
+    # Log the HTTP exception
+    logger.warning(
+        f"[{request_id}] HTTP {exc.status_code}: {exc.detail} "
+        f"- Path: {request.url.path}"
+    )
+    
     error_response = ErrorResponse(
         error=f"HTTP_{exc.status_code}",
         message=exc.detail,
         details=getattr(exc, "details", None),
     )
     return JSONResponse(
-        status_code=exc.status_code, content=error_response.model_dump()
+        status_code=exc.status_code, content=error_response.model_dump(mode='json')
     )
 
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Handle unexpected exceptions with secure error responses."""
-    # Log the full exception details (in production, use proper logging)
-    print(f"Unexpected error: {type(exc).__name__}: {str(exc)}")
+    request_id = getattr(request.state, "request_id", "unknown")
+    
+    # Log the full exception details for debugging (internal only)
+    logger.error(
+        f"[{request_id}] Unexpected error: {type(exc).__name__}: {str(exc)} "
+        f"- Path: {request.url.path}",
+        exc_info=True  # Include stack trace in logs
+    )
 
     # Return generic error response without exposing internal details
-    error_response = ErrorResponse(
-        error="INTERNAL_SERVER_ERROR",
-        message="An unexpected error occurred. Please try again later.",
+    # This satisfies Requirement 6.5: user-friendly messages without sensitive info
+    error_response = create_secure_error_response(
+        error_code="INTERNAL_SERVER_ERROR",
+        user_message="An unexpected error occurred. Please try again later.",
+        request_id=request_id
     )
-    return JSONResponse(status_code=500, content=error_response.model_dump())
+    return JSONResponse(status_code=500, content=error_response.model_dump(mode='json'))
+
+
+@app.exception_handler(ValidationError)
+async def validation_exception_handler(request: Request, exc: ValidationError) -> JSONResponse:
+    """Handle Pydantic validation errors with descriptive messages."""
+    request_id = getattr(request.state, "request_id", "unknown")
+    
+    # Extract validation error details
+    errors = []
+    for error in exc.errors():
+        field = ".".join(str(loc) for loc in error["loc"])
+        errors.append({
+            "field": field,
+            "message": error["msg"],
+            "type": error["type"]
+        })
+    
+    logger.warning(
+        f"[{request_id}] Validation error: {len(errors)} field(s) invalid "
+        f"- Path: {request.url.path}"
+    )
+    
+    error_response = ErrorResponse(
+        error="VALIDATION_ERROR",
+        message="Invalid input data. Please check the provided values.",
+        details={"validation_errors": errors}
+    )
+    return JSONResponse(status_code=422, content=error_response.model_dump(mode='json'))
 
 
 # Health check endpoint
@@ -175,7 +423,9 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-# TODO: Add route includes for controllers in later tasks
-# from .controllers import patients, vital_signs
-# app.include_router(patients.router, prefix="/patients", tags=["Patients"])
-# app.include_router(vital_signs.router, prefix="/patients", tags=["Vital Signs"])
+# Include routers for API endpoints
+from src.api.patients import router as patients_router
+from src.api.vitals import router as vitals_router
+
+app.include_router(patients_router)
+app.include_router(vitals_router)

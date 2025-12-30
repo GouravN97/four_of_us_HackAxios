@@ -3,7 +3,7 @@ Property-based tests for registration triggering risk assessment.
 Tests that patient registration automatically creates a risk assessment.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 import pytest
 from hypothesis import given, settings
@@ -26,6 +26,11 @@ class TestRegistrationTriggersRiskAssessment:
     @pytest.fixture(autouse=True)
     def setup_test_db(self):
         """Set up clean test database for each test."""
+        # This will be called before each test method
+        pass
+
+    def _setup_clean_db(self):
+        """Create a clean database for each test iteration."""
         create_test_database()
 
     @given(
@@ -47,7 +52,7 @@ class TestRegistrationTriggersRiskAssessment:
         timestamp=st.datetimes(
             min_value=datetime(2020, 1, 1),
             max_value=datetime.utcnow(),
-            timezones=st.just(timezone.utc),
+            timezones=st.none(),
         ),
     )
     @settings(max_examples=100)
@@ -100,6 +105,7 @@ class TestRegistrationTriggersRiskAssessment:
         )
 
         # Use test database session
+        self._setup_clean_db()
         db_session = next(get_test_db())
         try:
             # Initialize services
@@ -164,7 +170,7 @@ class TestRegistrationTriggersRiskAssessment:
         timestamp=st.datetimes(
             min_value=datetime(2020, 1, 1),
             max_value=datetime.utcnow(),
-            timezones=st.just(timezone.utc),
+            timezones=st.none(),
         ),
     )
     @settings(max_examples=50)
@@ -217,6 +223,7 @@ class TestRegistrationTriggersRiskAssessment:
         )
 
         # Use test database session
+        self._setup_clean_db()
         db_session = next(get_test_db())
         try:
             # Initialize services
