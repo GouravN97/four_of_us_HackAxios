@@ -47,7 +47,6 @@
   line-height: 1.21;
   color: #143C3C;
 }
-
 .label {
   position: absolute;
   font-family: 'Inter', sans-serif;
@@ -56,7 +55,6 @@
   line-height: 1.21;
   color: #285655;
 }
-
 .input {
   position: absolute;
   border: 1px solid #528F8E;
@@ -145,7 +143,6 @@
   color: #FFFFFF;
   cursor: pointer;
 }
-
 .login-button:hover {
   background: #3d7373;
 }
