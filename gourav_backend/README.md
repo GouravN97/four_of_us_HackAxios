@@ -149,6 +149,8 @@ tests/
 │   └── test_api_models.py # ✅ API model validation tests
 ├── integration/            # Integration tests
 └── property/               # Property-based tests
+    ├── test_error_response_security.py # ✅ Security testing for error responses
+    └── test_error_handling_preserves_system_state.py # ✅ System resilience tests
 ```
 
 ## 🏗️ Architecture
@@ -198,7 +200,10 @@ The system follows a layered architecture with comprehensive data validation:
 
 - **Medical Range Validation**: All vital signs validated against clinical standards at both API and database levels
 - **Database Constraints**: SQLAlchemy check constraints enforce medical ranges in the database
-- **Input Sanitization**: Comprehensive validation prevents malformed data
+- **Input Sanitization**: Comprehensive validation prevents malformed data and injection attacks
+- **Secure Error Responses**: Error messages are sanitized to prevent information disclosure while remaining user-friendly
+- **Authentication Security**: API key validation with rate limiting and session tracking
+- **Security Testing**: Comprehensive property-based tests validate error response security and input sanitization
 - **Structured Errors**: Detailed validation feedback without system exposure
 - **Type Safety**: Pydantic models ensure data integrity throughout the system
 - **Referential Integrity**: Foreign key relationships maintain data consistency

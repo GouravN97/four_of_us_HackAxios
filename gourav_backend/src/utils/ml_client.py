@@ -8,6 +8,16 @@ import time
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 
+from src.utils.error_handling import (
+    handle_service_error,
+    error_context,
+    monitor_external_service,
+    log_performance_warning,
+    ErrorCategory,
+    ErrorSeverity,
+    global_error_handler
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,6 +64,7 @@ class RiskModelClient:
         else:
             logger.info(f"RiskModelClient initialized with endpoint: {model_endpoint}")
     
+    @monitor_external_service("ml_risk_model", timeout_seconds=5.0, retry_attempts=1)
     def predict_risk(self, heart_rate: float, systolic_bp: float, diastolic_bp: float,
                     respiratory_rate: float, oxygen_saturation: float, temperature: float,
                     arrival_mode: str, acuity_level: int) -> Tuple[float, bool, int]:
@@ -81,7 +92,15 @@ class RiskModelClient:
         """
         start_time = time.time()
         
-        try:
+        with error_context(
+            "ml_model_risk_prediction",
+            ErrorCategory.EXTERNAL_SERVICE,
+            context={
+                "model_version": self.model_version,
+                "is_mock_mode": self.is_mock_mode,
+                "timeout_seconds": self.timeout_seconds
+            }
+        ):
             # Validate inputs
             self._validate_inputs(
                 heart_rate, systolic_bp, diastolic_bp, respiratory_rate,
@@ -114,17 +133,18 @@ class RiskModelClient:
             # Validate response
             self._validate_response(risk_score, risk_flag)
             
+            # Log performance warning if prediction took too long
+            log_performance_warning(
+                "ml_model_prediction",
+                processing_time_ms / 1000.0,  # Convert to seconds
+                self.timeout_seconds,
+                {"model_version": self.model_version, "is_mock": self.is_mock_mode}
+            )
+            
             logger.debug(f"Risk prediction completed: score={risk_score}, flag={risk_flag}, "
                         f"time={processing_time_ms}ms")
             
             return risk_score, risk_flag, processing_time_ms
-            
-        except MLModelError:
-            raise
-        except Exception as e:
-            processing_time_ms = int((time.time() - start_time) * 1000)
-            logger.error(f"Unexpected error in risk prediction: {e}")
-            raise MLModelError(f"Risk prediction failed: {str(e)}") from e
     
     def _validate_inputs(self, heart_rate: float, systolic_bp: float, diastolic_bp: float,
                         respiratory_rate: float, oxygen_saturation: float, temperature: float,
@@ -356,33 +376,47 @@ class RiskModelClient:
             }
         
         try:
-            # Try a simple prediction with normal values
-            start_time = time.time()
-            risk_score, risk_flag, _ = self.predict_risk(
-                heart_rate=72.0,
-                systolic_bp=120.0,
-                diastolic_bp=80.0,
-                respiratory_rate=16.0,
-                oxygen_saturation=98.0,
-                temperature=36.5,
-                arrival_mode="Walk-in",
-                acuity_level=2
-            )
-            response_time_ms = int((time.time() - start_time) * 1000)
-            
-            return {
-                "status": "healthy",
-                "mode": "real",
-                "model_version": self.model_version,
-                "response_time_ms": response_time_ms,
-                "test_prediction": {
-                    "risk_score": risk_score,
-                    "risk_flag": risk_flag
-                },
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
+            with error_context(
+                "ml_model_health_check",
+                ErrorCategory.EXTERNAL_SERVICE,
+                context={"model_version": self.model_version}
+            ):
+                # Try a simple prediction with normal values
+                start_time = time.time()
+                risk_score, risk_flag, _ = self.predict_risk(
+                    heart_rate=72.0,
+                    systolic_bp=120.0,
+                    diastolic_bp=80.0,
+                    respiratory_rate=16.0,
+                    oxygen_saturation=98.0,
+                    temperature=36.5,
+                    arrival_mode="Walk-in",
+                    acuity_level=2
+                )
+                response_time_ms = int((time.time() - start_time) * 1000)
+                
+                return {
+                    "status": "healthy",
+                    "mode": "real",
+                    "model_version": self.model_version,
+                    "response_time_ms": response_time_ms,
+                    "test_prediction": {
+                        "risk_score": risk_score,
+                        "risk_flag": risk_flag
+                    },
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+                
         except Exception as e:
+            # Handle health check errors gracefully
+            global_error_handler.handle_error(
+                exception=e,
+                category=ErrorCategory.EXTERNAL_SERVICE,
+                severity=ErrorSeverity.MEDIUM,
+                context={"operation": "health_check", "model_version": self.model_version},
+                user_message="ML model health check failed"
+            )
+            
             return {
                 "status": "unhealthy",
                 "mode": "real",

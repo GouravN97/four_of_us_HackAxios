@@ -21,6 +21,15 @@ from src.utils.ml_client import (
     MLModelValidationError,
     MLModelResponseError
 )
+from src.utils.error_handling import (
+    handle_service_error,
+    error_context,
+    monitor_external_service,
+    log_performance_warning,
+    ErrorCategory,
+    ErrorSeverity,
+    global_error_handler
+)
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +106,11 @@ class RiskAssessmentService:
         logger.info(f"RiskAssessmentService initialized with model version {model_version}, "
                    f"timeout={effective_timeout}s")
     
+    @handle_service_error(
+        category=ErrorCategory.BUSINESS_LOGIC,
+        severity=ErrorSeverity.MEDIUM,
+        user_message="Failed to perform risk assessment"
+    )
     def assess_risk_for_patient(self, patient_id: str, vital_signs_id: Optional[str] = None) -> RiskAssessment:
         """
         Perform risk assessment for a patient using their latest or specified vital signs.
@@ -114,7 +128,11 @@ class RiskAssessmentService:
             ModelUnavailableError: If ML model is unavailable
             RiskAssessmentServiceError: For other errors
         """
-        try:
+        with error_context(
+            f"risk_assessment_for_patient_{patient_id}",
+            ErrorCategory.BUSINESS_LOGIC,
+            context={"patient_id": patient_id, "vital_signs_id": vital_signs_id}
+        ):
             # Validate patient exists
             patient = self.patient_repo.get_by_id(patient_id)
             if not patient:
@@ -137,16 +155,12 @@ class RiskAssessmentService:
                        f"score={risk_assessment.risk_score}, flag={risk_assessment.risk_flag}")
             
             return risk_assessment
-            
-        except (PatientNotFoundError, VitalSignsNotFoundError, ModelUnavailableError):
-            raise
-        except SQLAlchemyError as e:
-            logger.error(f"Database error during risk assessment for patient {patient_id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to perform risk assessment: {str(e)}") from e
-        except Exception as e:
-            logger.error(f"Unexpected error during risk assessment for patient {patient_id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to perform risk assessment: {str(e)}") from e
     
+    @handle_service_error(
+        category=ErrorCategory.BUSINESS_LOGIC,
+        severity=ErrorSeverity.MEDIUM,
+        user_message="Failed to perform risk assessment for vital signs"
+    )
     def assess_risk_for_vital_signs(self, vital_signs: VitalSigns) -> RiskAssessment:
         """
         Perform risk assessment for specific vital signs record.
@@ -162,7 +176,11 @@ class RiskAssessmentService:
             ModelUnavailableError: If ML model is unavailable
             RiskAssessmentServiceError: For other errors
         """
-        try:
+        with error_context(
+            f"risk_assessment_for_vitals_{vital_signs.id}",
+            ErrorCategory.BUSINESS_LOGIC,
+            context={"vital_signs_id": str(vital_signs.id), "patient_id": vital_signs.patient_id}
+        ):
             # Get patient information
             patient = self.patient_repo.get_by_id(vital_signs.patient_id)
             if not patient:
@@ -175,16 +193,12 @@ class RiskAssessmentService:
                        f"score={risk_assessment.risk_score}, flag={risk_assessment.risk_flag}")
             
             return risk_assessment
-            
-        except (PatientNotFoundError, ModelUnavailableError):
-            raise
-        except SQLAlchemyError as e:
-            logger.error(f"Database error during risk assessment for vital signs {vital_signs.id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to perform risk assessment: {str(e)}") from e
-        except Exception as e:
-            logger.error(f"Unexpected error during risk assessment for vital signs {vital_signs.id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to perform risk assessment: {str(e)}") from e
     
+    @handle_service_error(
+        category=ErrorCategory.DATABASE,
+        severity=ErrorSeverity.LOW,
+        user_message="Failed to retrieve risk assessment"
+    )
     def get_latest_risk_assessment(self, patient_id: str) -> Optional[RiskAssessment]:
         """
         Get the most recent risk assessment for a patient.
@@ -199,26 +213,24 @@ class RiskAssessmentService:
             PatientNotFoundError: If patient doesn't exist
             RiskAssessmentServiceError: For other errors
         """
-        try:
-            # Validate patient exists
-            if not self.patient_repo.exists(patient_id):
-                raise PatientNotFoundError(f"Patient {patient_id} not found")
-            
-            risk_assessment = self.risk_repo.get_latest_for_patient(patient_id)
-            
-            if risk_assessment:
-                logger.debug(f"Retrieved latest risk assessment for patient {patient_id}")
-            else:
-                logger.debug(f"No risk assessments found for patient {patient_id}")
-            
-            return risk_assessment
-            
-        except PatientNotFoundError:
-            raise
-        except SQLAlchemyError as e:
-            logger.error(f"Database error retrieving latest risk assessment for patient {patient_id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to retrieve risk assessment: {str(e)}") from e
+        # Validate patient exists
+        if not self.patient_repo.exists(patient_id):
+            raise PatientNotFoundError(f"Patient {patient_id} not found")
+        
+        risk_assessment = self.risk_repo.get_latest_for_patient(patient_id)
+        
+        if risk_assessment:
+            logger.debug(f"Retrieved latest risk assessment for patient {patient_id}")
+        else:
+            logger.debug(f"No risk assessments found for patient {patient_id}")
+        
+        return risk_assessment
     
+    @handle_service_error(
+        category=ErrorCategory.DATABASE,
+        severity=ErrorSeverity.LOW,
+        user_message="Failed to retrieve risk assessment history"
+    )
     def get_risk_assessment_history(self, patient_id: str, limit: Optional[int] = None) -> List[RiskAssessment]:
         """
         Get risk assessment history for a patient.
@@ -234,22 +246,20 @@ class RiskAssessmentService:
             PatientNotFoundError: If patient doesn't exist
             RiskAssessmentServiceError: For other errors
         """
-        try:
-            # Validate patient exists
-            if not self.patient_repo.exists(patient_id):
-                raise PatientNotFoundError(f"Patient {patient_id} not found")
-            
-            assessments = self.risk_repo.get_for_patient(patient_id, limit=limit)
-            
-            logger.debug(f"Retrieved {len(assessments)} risk assessments for patient {patient_id}")
-            return assessments
-            
-        except PatientNotFoundError:
-            raise
-        except SQLAlchemyError as e:
-            logger.error(f"Database error retrieving risk assessment history for patient {patient_id}: {e}")
-            raise RiskAssessmentServiceError(f"Failed to retrieve risk assessment history: {str(e)}") from e
+        # Validate patient exists
+        if not self.patient_repo.exists(patient_id):
+            raise PatientNotFoundError(f"Patient {patient_id} not found")
+        
+        assessments = self.risk_repo.get_for_patient(patient_id, limit=limit)
+        
+        logger.debug(f"Retrieved {len(assessments)} risk assessments for patient {patient_id}")
+        return assessments
     
+    @handle_service_error(
+        category=ErrorCategory.DATABASE,
+        severity=ErrorSeverity.LOW,
+        user_message="Failed to retrieve high-risk patients"
+    )
     def get_high_risk_patients(self, limit: Optional[int] = None) -> List[str]:
         """
         Get list of patient IDs who are currently flagged as high risk.
@@ -263,16 +273,16 @@ class RiskAssessmentService:
         Raises:
             RiskAssessmentServiceError: For database errors
         """
-        try:
-            patient_ids = self.risk_repo.get_high_risk_patients(limit=limit)
-            
-            logger.debug(f"Found {len(patient_ids)} high-risk patients")
-            return patient_ids
-            
-        except SQLAlchemyError as e:
-            logger.error(f"Database error retrieving high-risk patients: {e}")
-            raise RiskAssessmentServiceError(f"Failed to retrieve high-risk patients: {str(e)}") from e
+        patient_ids = self.risk_repo.get_high_risk_patients(limit=limit)
+        
+        logger.debug(f"Found {len(patient_ids)} high-risk patients")
+        return patient_ids
     
+    @handle_service_error(
+        category=ErrorCategory.DATABASE,
+        severity=ErrorSeverity.LOW,
+        user_message="Failed to retrieve patients by risk range"
+    )
     def get_patients_by_risk_range(self, min_score: float, max_score: float,
                                   limit: Optional[int] = None) -> List[str]:
         """
@@ -296,16 +306,16 @@ class RiskAssessmentService:
         if min_score > max_score:
             raise ValueError("Minimum score cannot be greater than maximum score")
         
-        try:
-            patient_ids = self.risk_repo.get_patients_by_risk_score_range(min_score, max_score, limit=limit)
-            
-            logger.debug(f"Found {len(patient_ids)} patients with risk scores between {min_score} and {max_score}")
-            return patient_ids
-            
-        except SQLAlchemyError as e:
-            logger.error(f"Database error retrieving patients by risk range: {e}")
-            raise RiskAssessmentServiceError(f"Failed to retrieve patients by risk range: {str(e)}") from e
+        patient_ids = self.risk_repo.get_patients_by_risk_score_range(min_score, max_score, limit=limit)
+        
+        logger.debug(f"Found {len(patient_ids)} patients with risk scores between {min_score} and {max_score}")
+        return patient_ids
     
+    @handle_service_error(
+        category=ErrorCategory.DATABASE,
+        severity=ErrorSeverity.LOW,
+        user_message="Failed to retrieve assessment statistics"
+    )
     def get_assessment_statistics(self) -> Dict[str, Any]:
         """
         Get overall statistics about risk assessments.
@@ -316,15 +326,10 @@ class RiskAssessmentService:
         Raises:
             RiskAssessmentServiceError: For database errors
         """
-        try:
-            stats = self.risk_repo.get_assessment_statistics()
-            
-            logger.debug(f"Retrieved assessment statistics: {stats}")
-            return stats
-            
-        except SQLAlchemyError as e:
-            logger.error(f"Database error retrieving assessment statistics: {e}")
-            raise RiskAssessmentServiceError(f"Failed to retrieve assessment statistics: {str(e)}") from e
+        stats = self.risk_repo.get_assessment_statistics()
+        
+        logger.debug(f"Retrieved assessment statistics: {stats}")
+        return stats
     
     def check_model_health(self) -> Dict[str, Any]:
         """
@@ -340,7 +345,15 @@ class RiskAssessmentService:
             return health_status
             
         except Exception as e:
-            logger.error(f"Error during ML model health check: {e}")
+            # Handle model health check errors gracefully
+            global_error_handler.handle_error(
+                exception=e,
+                category=ErrorCategory.EXTERNAL_SERVICE,
+                severity=ErrorSeverity.MEDIUM,
+                context={"operation": "model_health_check"},
+                user_message="ML model health check failed"
+            )
+            
             return {
                 "status": "error",
                 "error": str(e),
@@ -482,6 +495,7 @@ class RiskAssessmentService:
         
         return model_input
     
+    @monitor_external_service("ml_risk_model", timeout_seconds=5.0, retry_attempts=2)
     def _perform_risk_assessment(self, patient: Patient, vital_signs: VitalSigns) -> RiskAssessment:
         """
         Perform the actual risk assessment using the ML model.
@@ -524,6 +538,14 @@ class RiskAssessmentService:
             # Extract risk score and flag from response (Requirement 5.2)
             logger.debug(f"ML model prediction successful: score={risk_score}, flag={risk_flag}, "
                         f"time={processing_time_ms}ms")
+            
+            # Log performance warning if assessment took too long (Requirement 3.5)
+            log_performance_warning(
+                f"risk_assessment_patient_{patient.patient_id}",
+                processing_time_ms / 1000.0,  # Convert to seconds
+                self.MAX_ASSESSMENT_TIME_SECONDS,
+                {"patient_id": patient.patient_id, "vital_signs_id": str(vital_signs.id)}
+            )
             
         except MLModelTimeoutError as e:
             # Requirement 5.5: Log issue when model unavailable
