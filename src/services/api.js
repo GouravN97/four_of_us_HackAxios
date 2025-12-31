@@ -5,7 +5,7 @@
  * It replaces the mock data in the frontend components with real database data.
  */
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /**
  * Helper function to handle API responses
@@ -17,6 +17,7 @@ async function handleResponse(response) {
   }
   return response.json();
 }
+
 
 /**
  * Check if the API is healthy
